@@ -1,0 +1,78 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              Int              @id @default(autoincrement())
+  email           String           @unique
+  name            String
+  password        String
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  enabled         Boolean          @default(true)
+  providers       UserProvider[]
+  accountingBooks AccountingBook[]
+}
+
+model AccountingBook {
+  id           Int           @id @default(autoincrement())
+  name         String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  userId       Int
+  transactions Transaction[]
+  user         User          @relation(fields: [userId], references: [id])
+}
+
+model Transaction {
+  id               Int            @id @default(autoincrement())
+  name             String
+  amount           Float
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  accountingBookId Int
+  categoryId       Int
+  providerId       Int?
+  provider         Provider?      @relation(fields: [providerId], references: [id])
+  category         Category       @relation(fields: [categoryId], references: [id])
+  accountingBook   AccountingBook @relation(fields: [accountingBookId], references: [id])
+}
+
+model Category {
+  id              Int           @id @default(autoincrement())
+  name            String
+  categoryGroupId Int
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  transactions    Transaction[]
+  categoryGroup   CategoryGroup @relation(fields: [categoryGroupId], references: [id])
+}
+
+model CategoryGroup {
+  id         Int        @id @default(autoincrement())
+  name       String
+  categories Category[]
+}
+
+model Provider {
+  id           Int            @id @default(autoincrement())
+  name         String
+  transactions Transaction[]
+  users        UserProvider[]
+}
+
+model UserProvider {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  providerId Int
+  user       User     @relation(fields: [userId], references: [id])
+  provider   Provider @relation(fields: [providerId], references: [id])
+}
