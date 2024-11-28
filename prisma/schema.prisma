@@ -18,6 +18,7 @@ model User {
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   enabled         Boolean          @default(true)
+  isAdmin         Boolean          @default(false)
   providers       UserProvider[]
   accountingBooks AccountingBook[]
 }
@@ -28,6 +29,7 @@ model AccountingBook {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   userId       Int
+  isBusiness   Boolean       @default(false)
   transactions Transaction[]
   user         User          @relation(fields: [userId], references: [id])
 }
