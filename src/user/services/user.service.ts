@@ -30,6 +30,16 @@ export class UserService {
 		});
 	}
 
+	async getByEmail(
+		email: string
+	): Promise<User | null> {
+		return this.prisma.user.findUnique({
+			where: {
+				email
+			}
+		});
+	}
+
 	async update(
 		id: number,
 		data: Prisma.UserUpdateInput

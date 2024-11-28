@@ -17,9 +17,11 @@ export class UserController {
 
 	@Get()
 	async getUser(
-		@Query('id') id: number,
+		@Query('id') id?: number,
+		@Query('email') email?: string
 	): Promise<User | null> {
-		return this.userService.get(id);
+		if (id) return this.userService.get(id);
+		if (email) return this.userService.getByEmail(email);
 	}
 
 	@Put()
