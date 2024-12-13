@@ -1,5 +1,5 @@
-import { Body, Controller, Get, Post, Put, Query, Redirect } from "@nestjs/common"
-import { AccountingBookService } from "../services/accountingBook.service";
+import { Body, Controller, Get, Post, Put, Query } from "@nestjs/common"
+import { AccountingBookService } from "./accountingBook.service";
 import { AccountingBook, Prisma } from "@prisma/client";
 
 @Controller('book')

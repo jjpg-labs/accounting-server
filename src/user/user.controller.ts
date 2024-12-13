@@ -1,5 +1,5 @@
-import { Body, Controller, Get, Post, Put, Query } from "@nestjs/common"
-import { UserService } from "../services/user.service";
+import { Body, Controller, Get, Post, Put, Query, SetMetadata } from "@nestjs/common"
+import { UserService } from "./user.service";
 import { Prisma, User } from "@prisma/client";
 
 @Controller('user')
@@ -9,6 +9,7 @@ export class UserController {
 	) { }
 
 	@Post()
+	@SetMetadata('isPublic', true)
 	async createUser(
 		@Body() data: Prisma.UserCreateInput
 	): Promise<User | null> {
@@ -30,5 +31,10 @@ export class UserController {
 		@Body() data: Prisma.UserUpdateInput
 	): Promise<User | null> {
 		return this.userService.update(id, data);
+	}
+
+	@Get('all')
+	async getUsers(): Promise<User[]> {
+		return this.userService.getAll();
 	}
 }

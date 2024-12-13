@@ -42,6 +42,7 @@ model Transaction {
   updatedAt        DateTime       @updatedAt
   accountingBookId Int
   categoryId       Int
+  type             String
   providerId       Int?
   provider         Provider?      @relation(fields: [providerId], references: [id])
   category         Category       @relation(fields: [categoryId], references: [id])
@@ -49,19 +50,11 @@ model Transaction {
 }
 
 model Category {
-  id              Int           @id @default(autoincrement())
-  name            String
-  categoryGroupId Int
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  transactions    Transaction[]
-  categoryGroup   CategoryGroup @relation(fields: [categoryGroupId], references: [id])
-}
-
-model CategoryGroup {
-  id         Int        @id @default(autoincrement())
-  name       String
-  categories Category[]
+  id           Int           @id @default(autoincrement())
+  name         String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  transactions Transaction[]
 }
 
 model Provider {

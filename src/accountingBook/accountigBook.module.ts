@@ -1,7 +1,7 @@
 import { Module } from "@nestjs/common";
-import { AccountingBookController } from "./controllers/accountingBook.controller";
-import { AccountingBookService } from "./services/accountingBook.service";
-import { PrismaService } from "src/services/prisma.service";
+import { AccountingBookController } from "./accountingBook.controller";
+import { AccountingBookService } from "./accountingBook.service";
+import { PrismaService } from "../services/prisma.service";
 
 @Module({
 	controllers: [AccountingBookController],

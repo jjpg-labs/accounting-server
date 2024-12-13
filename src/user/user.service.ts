@@ -1,6 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { Prisma, User } from "@prisma/client";
-import { PrismaService } from "src/services/prisma.service";
+import { PrismaService } from "../services/prisma.service";
 
 @Injectable()
 export class UserService {
@@ -38,6 +38,10 @@ export class UserService {
 				email
 			}
 		});
+	}
+
+	async getAll(): Promise<User[]> {
+		return this.prisma.user.findMany();
 	}
 
 	async update(
