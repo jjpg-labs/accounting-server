@@ -34,14 +34,6 @@ describe('TransactionController', () => {
     },
   };
 
-  const category: Prisma.CategoryCreateNestedOneWithoutTransactionsInput = {
-    create: {
-      name: 'Test',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-  };
-
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [TransactionController],
@@ -62,7 +54,7 @@ describe('TransactionController', () => {
   });
 
   it('should create a transaction', async () => {
-    const data: Prisma.TransactionCreateInput = { amount: 100, name: 'Test transaction', accountingBook, type: 'INCOME', category };
+    const data: Prisma.TransactionCreateInput = { amount: 100, name: 'Test transaction', accountingBook, type: 'INCOME' };
     expect(await controller.createTransaction(data)).toEqual({ id: 1, ...data });
     expect(service.createTransaction).toHaveBeenCalledWith(data);
   });

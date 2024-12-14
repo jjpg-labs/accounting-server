@@ -19,7 +19,7 @@ model User {
   updatedAt       DateTime         @updatedAt
   enabled         Boolean          @default(true)
   isAdmin         Boolean          @default(false)
-  providers       UserProvider[]
+  suppliers       Supplier[]
   accountingBooks AccountingBook[]
 }
 
@@ -41,33 +41,18 @@ model Transaction {
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
   accountingBookId Int
-  categoryId       Int
   type             String
-  providerId       Int?
-  provider         Provider?      @relation(fields: [providerId], references: [id])
-  category         Category       @relation(fields: [categoryId], references: [id])
+  supplierId       Int?
+  supplier         Supplier?      @relation(fields: [supplierId], references: [id])
   accountingBook   AccountingBook @relation(fields: [accountingBookId], references: [id])
 }
 
-model Category {
+model Supplier {
   id           Int           @id @default(autoincrement())
   name         String
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
+  userId       Int
   transactions Transaction[]
-}
-
-model Provider {
-  id           Int            @id @default(autoincrement())
-  name         String
-  transactions Transaction[]
-  users        UserProvider[]
-}
-
-model UserProvider {
-  id         Int      @id @default(autoincrement())
-  userId     Int
-  providerId Int
-  user       User     @relation(fields: [userId], references: [id])
-  provider   Provider @relation(fields: [providerId], references: [id])
+  user         User          @relation(fields: [userId], references: [id])
 }

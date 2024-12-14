@@ -26,9 +26,8 @@ describe('TransactionService', () => {
         accountingBookId: 1,
         createdAt: new Date(),
         updatedAt: new Date(),
-        categoryId: 1,
         type: 'INCOME',
-        providerId: null,
+        supplierId: null,
         name: 'Test'
       };
 
@@ -55,20 +54,12 @@ describe('TransactionService', () => {
         updatedAt: new Date(),
         userId: 1,
       },
-    }
-    const category: Prisma.CategoryCreateNestedOneWithoutTransactionsInput = {
-      create: {
-        name: 'Test',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
     };
 
     it('should create a new transaction', async () => {
       const data: Prisma.TransactionCreateInput = {
         amount: 100,
         accountingBook,
-        category,
         type: 'INCOME',
         name: 'Test',
       };
@@ -78,9 +69,8 @@ describe('TransactionService', () => {
         accountingBookId: 1,
         createdAt: new Date(),
         updatedAt: new Date(),
-        categoryId: 1,
         type: 'INCOME',
-        providerId: null,
+        supplierId: null,
         name: 'Test'
       };
 
@@ -93,7 +83,6 @@ describe('TransactionService', () => {
       const data: Prisma.TransactionCreateInput = {
         amount: 100,
         accountingBook,
-        category,
         type: 'INCOME',
         name: 'Test',
       };
@@ -113,9 +102,8 @@ describe('TransactionService', () => {
         accountingBookId: 1,
         createdAt: new Date(),
         updatedAt: new Date(),
-        categoryId: 1,
         type: 'INCOME',
-        providerId: null,
+        supplierId: null,
         name: 'Test'
       };
 
@@ -143,9 +131,8 @@ describe('TransactionService', () => {
           accountingBookId,
           createdAt: new Date(),
           updatedAt: new Date(),
-          categoryId: 1,
           type: 'INCOME',
-          providerId: null,
+          supplierId: null,
           name: 'Test'
         },
         {
@@ -154,9 +141,8 @@ describe('TransactionService', () => {
           accountingBookId,
           createdAt: new Date(),
           updatedAt: new Date(),
-          categoryId: 2,
           type: 'EXPENSE',
-          providerId: null,
+          supplierId: null,
           name: 'Test 2'
         }
       ];
@@ -184,9 +170,8 @@ describe('TransactionService', () => {
         accountingBookId: 1,
         createdAt: new Date(),
         updatedAt: new Date(),
-        categoryId: 1,
         type: 'INCOME',
-        providerId: null,
+        supplierId: null,
         name: 'Test'
       };
 
