@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -19,8 +16,8 @@ model User {
   updatedAt       DateTime         @updatedAt
   enabled         Boolean          @default(true)
   isAdmin         Boolean          @default(false)
-  suppliers       Supplier[]
   accountingBooks AccountingBook[]
+  suppliers       Supplier[]
 }
 
 model AccountingBook {
@@ -30,8 +27,10 @@ model AccountingBook {
   updatedAt    DateTime      @updatedAt
   userId       Int
   isBusiness   Boolean       @default(false)
-  transactions Transaction[]
   user         User          @relation(fields: [userId], references: [id])
+  transactions Transaction[]
+
+  @@index([userId], map: "AccountingBook_userId_fkey")
 }
 
 model Transaction {
@@ -43,8 +42,11 @@ model Transaction {
   accountingBookId Int
   type             String
   supplierId       Int?
-  supplier         Supplier?      @relation(fields: [supplierId], references: [id])
   accountingBook   AccountingBook @relation(fields: [accountingBookId], references: [id])
+  supplier         Supplier?      @relation(fields: [supplierId], references: [id])
+
+  @@index([accountingBookId], map: "Transaction_accountingBookId_fkey")
+  @@index([supplierId], map: "Transaction_supplierId_fkey")
 }
 
 model Supplier {
@@ -53,6 +55,8 @@ model Supplier {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   userId       Int
-  transactions Transaction[]
   user         User          @relation(fields: [userId], references: [id])
+  transactions Transaction[]
+
+  @@index([userId], map: "Supplier_userId_fkey")
 }
