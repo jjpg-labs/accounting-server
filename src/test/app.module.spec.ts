@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AppModule } from '../app.module';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from '../auth/auth.module';
-import { AccountingBookModule } from '../accountingBook/accountigBook.module';
+import { AccountingBookModule } from '../accountingBook/accountingBook.module';
 import { AppController } from '../app.controller';
 import { AppService } from '../app.service';
 import { APP_GUARD } from '@nestjs/core';

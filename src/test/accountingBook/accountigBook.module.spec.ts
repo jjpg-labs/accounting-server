@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AccountingBookModule } from '../../accountingBook/accountigBook.module';
+import { AccountingBookModule } from '../../accountingBook/accountingBook.module';
 import { AccountingBookController } from '../../accountingBook/accountingBook.controller';
 import { AccountingBookService } from '../../accountingBook/accountingBook.service';
 import { PrismaService } from '../../services/prisma.service';
