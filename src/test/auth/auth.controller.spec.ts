@@ -25,11 +25,13 @@ describe('AuthController', () => {
 
   it('should signIn on valid user', async () => {
     const result = {
-      access_token: 'token'
+      access_token: 'token',
     };
 
     jest.spyOn(authService, 'signIn').mockImplementation(async () => result);
 
-    expect(await controller.signIn({ email: 'test@test.com', pass: 'password' })).toBe(result);
+    expect(
+      await controller.signIn({ email: 'test@test.com', pass: 'password' }),
+    ).toBe(result);
   });
 });

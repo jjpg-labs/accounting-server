@@ -32,7 +32,16 @@ describe('AuthService', () => {
     const updatedAt = new Date();
     const enabled = true;
     const isAdmin = false;
-    const user = { password, name, id, email, createdAt, updatedAt, enabled, isAdmin };
+    const user = {
+      password,
+      name,
+      id,
+      email,
+      createdAt,
+      updatedAt,
+      enabled,
+      isAdmin,
+    };
     jest.spyOn(userService, 'getByEmail').mockImplementation(async () => user);
     jest.spyOn(jwtService, 'signAsync').mockImplementation(async () => 'token');
     const result = await service.signIn(email, password);
@@ -47,7 +56,16 @@ describe('AuthService', () => {
   });
 
   it('should return null if password is incorrect', async () => {
-    const user = { password: 'wrongpassword', name: 'test', id: 1, email: 'test@test.com', createdAt: new Date(), updatedAt: new Date(), enabled: true, isAdmin: false };
+    const user = {
+      password: 'wrongpassword',
+      name: 'test',
+      id: 1,
+      email: 'test@test.com',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      enabled: true,
+      isAdmin: false,
+    };
     jest.spyOn(userService, 'getByEmail').mockImplementation(async () => user);
     const result = await service.signIn('test@test.com', 'password');
     expect(result).toBeNull();

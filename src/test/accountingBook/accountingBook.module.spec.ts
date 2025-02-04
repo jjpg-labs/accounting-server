@@ -5,19 +5,20 @@ import { AccountingBookService } from '../../accountingBook/accountingBook.servi
 import { PrismaService } from '../../services/prisma.service';
 
 describe('AccountingBookModule', () => {
-	let accountingBookModule: AccountingBookModule;
+  let accountingBookModule: AccountingBookModule;
 
-	beforeEach(async () => {
-		const module: TestingModule = await Test.createTestingModule({
-			imports: [AccountingBookModule],
-			controllers: [AccountingBookController],
-			providers: [AccountingBookService, PrismaService],
-		}).compile();
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      imports: [AccountingBookModule],
+      controllers: [AccountingBookController],
+      providers: [AccountingBookService, PrismaService],
+    }).compile();
 
-		accountingBookModule = module.get<AccountingBookModule>(AccountingBookModule);
-	});
+    accountingBookModule =
+      module.get<AccountingBookModule>(AccountingBookModule);
+  });
 
-	it('should be defined', () => {
-		expect(accountingBookModule).toBeDefined();
-	});
+  it('should be defined', () => {
+    expect(accountingBookModule).toBeDefined();
+  });
 });

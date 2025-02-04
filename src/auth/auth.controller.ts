@@ -4,12 +4,12 @@ import { Public } from './auth.guard';
 
 @Controller('auth')
 export class AuthController {
-	constructor(private authService: AuthService) { }
+  constructor(private authService: AuthService) {}
 
-	@Public()
-	@HttpCode(200)
-	@Post('login')
-	async signIn(@Body() signInDto: { email: string; pass: string }) {
-		return await this.authService.signIn(signInDto.email, signInDto.pass);
-	}
+  @Public()
+  @HttpCode(200)
+  @Post('login')
+  async signIn(@Body() signInDto: { email: string; pass: string }) {
+    return await this.authService.signIn(signInDto.email, signInDto.pass);
+  }
 }

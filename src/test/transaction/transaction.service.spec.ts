@@ -28,10 +28,12 @@ describe('TransactionService', () => {
         updatedAt: new Date(),
         type: 'INCOME',
         supplierId: null,
-        name: 'Test'
+        name: 'Test',
       };
 
-      jest.spyOn(prismaService.transaction, 'update').mockResolvedValue(updatedTransaction);
+      jest
+        .spyOn(prismaService.transaction, 'update')
+        .mockResolvedValue(updatedTransaction);
 
       expect(await service.update(id, data)).toEqual(updatedTransaction);
     });
@@ -40,21 +42,26 @@ describe('TransactionService', () => {
       const id = 1;
       const data: Prisma.TransactionUpdateInput = { amount: 100 };
 
-      jest.spyOn(prismaService.transaction, 'update').mockRejectedValue(new Error('Transaction not found'));
+      jest
+        .spyOn(prismaService.transaction, 'update')
+        .mockRejectedValue(new Error('Transaction not found'));
 
-      await expect(service.update(id, data)).rejects.toThrow('Transaction not found');
+      await expect(service.update(id, data)).rejects.toThrow(
+        'Transaction not found',
+      );
     });
   });
 
   describe('createTransaction', () => {
-    const accountingBook: Prisma.AccountingBookCreateNestedOneWithoutTransactionsInput = {
-      create: {
-        name: 'Test',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        userId: 1,
-      },
-    };
+    const accountingBook: Prisma.AccountingBookCreateNestedOneWithoutTransactionsInput =
+      {
+        create: {
+          name: 'Test',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          userId: 1,
+        },
+      };
 
     it('should create a new transaction', async () => {
       const data: Prisma.TransactionCreateInput = {
@@ -71,10 +78,12 @@ describe('TransactionService', () => {
         updatedAt: new Date(),
         type: 'INCOME',
         supplierId: null,
-        name: 'Test'
+        name: 'Test',
       };
 
-      jest.spyOn(prismaService.transaction, 'create').mockResolvedValue(createdTransaction);
+      jest
+        .spyOn(prismaService.transaction, 'create')
+        .mockResolvedValue(createdTransaction);
 
       expect(await service.createTransaction(data)).toEqual(createdTransaction);
     });
@@ -87,9 +96,13 @@ describe('TransactionService', () => {
         name: 'Test',
       };
 
-      jest.spyOn(prismaService.transaction, 'create').mockRejectedValue(new Error('Transaction creation failed'));
+      jest
+        .spyOn(prismaService.transaction, 'create')
+        .mockRejectedValue(new Error('Transaction creation failed'));
 
-      await expect(service.createTransaction(data)).rejects.toThrow('Transaction creation failed');
+      await expect(service.createTransaction(data)).rejects.toThrow(
+        'Transaction creation failed',
+      );
     });
   });
 
@@ -104,10 +117,12 @@ describe('TransactionService', () => {
         updatedAt: new Date(),
         type: 'INCOME',
         supplierId: null,
-        name: 'Test'
+        name: 'Test',
       };
 
-      jest.spyOn(prismaService.transaction, 'findUnique').mockResolvedValue(transaction);
+      jest
+        .spyOn(prismaService.transaction, 'findUnique')
+        .mockResolvedValue(transaction);
 
       expect(await service.get(id)).toEqual(transaction);
     });
@@ -115,7 +130,9 @@ describe('TransactionService', () => {
     it('should return null if transaction does not exist', async () => {
       const id = 1;
 
-      jest.spyOn(prismaService.transaction, 'findUnique').mockResolvedValue(null);
+      jest
+        .spyOn(prismaService.transaction, 'findUnique')
+        .mockResolvedValue(null);
 
       expect(await service.get(id)).toBeNull();
     });
@@ -133,7 +150,7 @@ describe('TransactionService', () => {
           updatedAt: new Date(),
           type: 'INCOME',
           supplierId: null,
-          name: 'Test'
+          name: 'Test',
         },
         {
           id: 2,
@@ -143,11 +160,13 @@ describe('TransactionService', () => {
           updatedAt: new Date(),
           type: 'EXPENSE',
           supplierId: null,
-          name: 'Test 2'
-        }
+          name: 'Test 2',
+        },
       ];
 
-      jest.spyOn(prismaService.transaction, 'findMany').mockResolvedValue(transactions);
+      jest
+        .spyOn(prismaService.transaction, 'findMany')
+        .mockResolvedValue(transactions);
 
       expect(await service.getAll(accountingBookId)).toEqual(transactions);
     });
@@ -172,10 +191,12 @@ describe('TransactionService', () => {
         updatedAt: new Date(),
         type: 'INCOME',
         supplierId: null,
-        name: 'Test'
+        name: 'Test',
       };
 
-      jest.spyOn(prismaService.transaction, 'delete').mockResolvedValue(deletedTransaction);
+      jest
+        .spyOn(prismaService.transaction, 'delete')
+        .mockResolvedValue(deletedTransaction);
 
       expect(await service.delete(id)).toEqual(deletedTransaction);
     });
@@ -183,7 +204,9 @@ describe('TransactionService', () => {
     it('should return null if transaction does not exist', async () => {
       const id = 1;
 
-      jest.spyOn(prismaService.transaction, 'delete').mockRejectedValue(new Error('Transaction not found'));
+      jest
+        .spyOn(prismaService.transaction, 'delete')
+        .mockRejectedValue(new Error('Transaction not found'));
 
       await expect(service.delete(id)).rejects.toThrow('Transaction not found');
     });

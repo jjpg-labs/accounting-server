@@ -25,14 +25,15 @@ describe('TransactionController', () => {
     }),
   };
 
-  const accountingBook: Prisma.AccountingBookCreateNestedOneWithoutTransactionsInput = {
-    create: {
-      name: 'Test',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      userId: 1,
-    },
-  };
+  const accountingBook: Prisma.AccountingBookCreateNestedOneWithoutTransactionsInput =
+    {
+      create: {
+        name: 'Test',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        userId: 1,
+      },
+    };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -54,29 +55,53 @@ describe('TransactionController', () => {
   });
 
   it('should create a transaction', async () => {
-    const data: Prisma.TransactionCreateInput = { amount: 100, name: 'Test transaction', accountingBook, type: 'INCOME' };
-    expect(await controller.createTransaction(data)).toEqual({ id: 1, ...data });
+    const data: Prisma.TransactionCreateInput = {
+      amount: 100,
+      name: 'Test transaction',
+      accountingBook,
+      type: 'INCOME',
+    };
+    expect(await controller.createTransaction(data)).toEqual({
+      id: 1,
+      ...data,
+    });
     expect(service.createTransaction).toHaveBeenCalledWith(data);
   });
 
   it('should update a transaction', async () => {
-    const data: Prisma.TransactionUpdateInput = { amount: 200, name: 'Updated transaction' };
-    expect(await controller.updateTransaction(1, data)).toEqual({ id: 1, ...data });
+    const data: Prisma.TransactionUpdateInput = {
+      amount: 200,
+      name: 'Updated transaction',
+    };
+    expect(await controller.updateTransaction(1, data)).toEqual({
+      id: 1,
+      ...data,
+    });
     expect(service.update).toHaveBeenCalledWith(1, data);
   });
 
   it('should get a transaction', async () => {
-    expect(await controller.getTransaction(1)).toEqual({ id: 1, amount: 100, name: 'Test transaction' });
+    expect(await controller.getTransaction(1)).toEqual({
+      id: 1,
+      amount: 100,
+      name: 'Test transaction',
+    });
     expect(service.get).toHaveBeenCalledWith(1);
   });
 
   it('should get all transactions', async () => {
-    expect(await controller.getTransactions(1)).toEqual([{ id: 1, amount: 100, name: 'Test transaction' }]);
+    expect(await controller.getTransactions(1)).toEqual([
+      { id: 1, amount: 100, name: 'Test transaction' },
+    ]);
     expect(service.getAll).toHaveBeenCalledWith(1);
   });
 
   it('should delete a transaction', async () => {
-    expect(await controller.deleteTransaction(1)).toEqual({ id: 1, amount: 100, name: 'Test transaction' });
+    expect(await controller.deleteTransaction(1)).toEqual({
+      id: 1,
+      amount: 100,
+      name: 'Test transaction',
+    });
     expect(service.delete).toHaveBeenCalledWith(1);
   });
 });

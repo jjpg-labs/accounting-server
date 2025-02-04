@@ -1,59 +1,49 @@
-import { Injectable } from "@nestjs/common";
-import { Prisma, User } from "@prisma/client";
-import { PrismaService } from "../services/prisma.service";
+import { Injectable } from '@nestjs/common';
+import { Prisma, User } from '@prisma/client';
+import { PrismaService } from '../services/prisma.service';
 
 @Injectable()
 export class UserService {
-	constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
+  async createUser(data: Prisma.UserCreateInput): Promise<User | null> {
+    return this.prisma.user.create({
+      data: {
+        ...data,
+        enabled: true,
+        updatedAt: new Date(),
+      },
+    });
+  }
 
-	async createUser(
-		data: Prisma.UserCreateInput
-	): Promise<User | null> {
-		return this.prisma.user.create({
-			data: {
-				...data,
-				enabled: true,
-				updatedAt: new Date()
-			}
-		});
-	}
+  async get(id: number): Promise<User | null> {
+    const numericId = Number(id);
+    return this.prisma.user.findUnique({
+      where: {
+        id: numericId,
+      },
+    });
+  }
 
-	async get(
-		id: number
-	): Promise<User | null> {
-		const numericId = Number(id);
-		return this.prisma.user.findUnique({
-			where: {
-				id: numericId
-			}
-		});
-	}
+  async getByEmail(email: string): Promise<User | null> {
+    return this.prisma.user.findUnique({
+      where: {
+        email,
+      },
+    });
+  }
 
-	async getByEmail(
-		email: string
-	): Promise<User | null> {
-		return this.prisma.user.findUnique({
-			where: {
-				email
-			}
-		});
-	}
+  async getAll(): Promise<User[]> {
+    return this.prisma.user.findMany();
+  }
 
-	async getAll(): Promise<User[]> {
-		return this.prisma.user.findMany();
-	}
-
-	async update(
-		id: number,
-		data: Prisma.UserUpdateInput
-	): Promise<User | null> {
-		const numericId = Number(id);
-		return this.prisma.user.update({
-			where: {
-				id: numericId
-			},
-			data
-		});
-	}
+  async update(id: number, data: Prisma.UserUpdateInput): Promise<User | null> {
+    const numericId = Number(id);
+    return this.prisma.user.update({
+      where: {
+        id: numericId,
+      },
+      data,
+    });
+  }
 }

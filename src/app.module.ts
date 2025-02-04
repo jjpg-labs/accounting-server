@@ -12,19 +12,19 @@ import { TransactionModule } from './transaction/transaction.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      load: [configuration]
+      load: [configuration],
     }),
     AuthModule,
     AccountingBookModule,
-    TransactionModule
+    TransactionModule,
   ],
   controllers: [AppController],
   providers: [
     AppService,
     {
       provide: APP_GUARD,
-      useClass: AuthGuard
-    }
+      useClass: AuthGuard,
+    },
   ],
 })
-export class AppModule { }
+export class AppModule {}
