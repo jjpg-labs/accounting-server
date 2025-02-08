@@ -27,4 +27,4 @@ import { TransactionModule } from './transaction/transaction.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }

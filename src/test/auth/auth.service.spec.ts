@@ -49,13 +49,13 @@ describe('AuthService', () => {
     expect(result).toEqual({ access_token: 'token' });
   });
 
-  it('should return null if user not found', async () => {
+  it('should return unauthorized message if user not found', async () => {
     jest.spyOn(userService, 'getByEmail').mockImplementation(async () => null);
     const result = await service.signIn('test@test.com', 'password');
-    expect(result).toBeNull();
+    expect(result).toEqual({ message: 'Unauthorized' });
   });
 
-  it('should return null if password is incorrect', async () => {
+  it('should return unauthorized message if password is incorrect', async () => {
     const user = {
       password: 'wrongpassword',
       name: 'test',
@@ -68,6 +68,7 @@ describe('AuthService', () => {
     };
     jest.spyOn(userService, 'getByEmail').mockImplementation(async () => user);
     const result = await service.signIn('test@test.com', 'password');
-    expect(result).toBeNull();
+
+    expect(result).toEqual({ message: 'Unauthorized' });
   });
 });

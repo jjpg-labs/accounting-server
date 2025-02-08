@@ -1,15 +1,19 @@
-import { Body, Controller, HttpCode, Post } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Post, Res } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Public } from './auth.guard';
+import { Response } from 'express';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private authService: AuthService) { }
 
   @Public()
-  @HttpCode(200)
   @Post('login')
-  async signIn(@Body() signInDto: { email: string; pass: string }) {
-    return await this.authService.signIn(signInDto.email, signInDto.pass);
+  async signIn(@Body() signInDto: { email: string; pass: string }, @Res() res: Response) {
+    const response = await this.authService.signIn(signInDto.email, signInDto.pass);
+
+    const status = response ? HttpStatus.OK : HttpStatus.UNAUTHORIZED;
+
+    return res.status(status).json(response);
   }
 }

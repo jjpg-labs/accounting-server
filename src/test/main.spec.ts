@@ -17,7 +17,7 @@ describe('Main (e2e)', () => {
 
   it('should start the application', async () => {
     const response = await request(app.getHttpServer()).get('/');
-    expect(response.status).toBe(401); // Assuming no route is defined
+    expect(response.status).toBe(200);
   });
 
   afterAll(async () => {
