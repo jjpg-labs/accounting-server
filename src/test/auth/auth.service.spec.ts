@@ -3,11 +3,13 @@ import { AuthService } from '../../auth/auth.service';
 import { UserService } from '../../user/user.service';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../services/prisma.service';
+import { SignInParams } from 'src/auth/auth.types';
 
 describe('AuthService', () => {
   let service: AuthService;
   let userService: UserService;
   let jwtService: JwtService;
+  const signInParams: SignInParams = { email: 'test@test.com', pass: 'password' };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -24,19 +26,17 @@ describe('AuthService', () => {
   });
 
   it('should signIn on valid user', async () => {
-    const password = 'password';
     const name = 'test';
     const id = 1;
-    const email = 'test@test.com';
     const createdAt = new Date();
     const updatedAt = new Date();
     const enabled = true;
     const isAdmin = false;
     const user = {
-      password,
+      password: signInParams.pass,
       name,
       id,
-      email,
+      email: signInParams.email,
       createdAt,
       updatedAt,
       enabled,
@@ -44,14 +44,14 @@ describe('AuthService', () => {
     };
     jest.spyOn(userService, 'getByEmail').mockImplementation(async () => user);
     jest.spyOn(jwtService, 'signAsync').mockImplementation(async () => 'token');
-    const result = await service.signIn(email, password);
+    const result = await service.signIn(signInParams);
     expect(result).toBeDefined();
     expect(result).toEqual({ access_token: 'token' });
   });
 
   it('should return unauthorized message if user not found', async () => {
     jest.spyOn(userService, 'getByEmail').mockImplementation(async () => null);
-    const result = await service.signIn('test@test.com', 'password');
+    const result = await service.signIn(signInParams);
     expect(result).toEqual({ message: 'Unauthorized' });
   });
 
@@ -67,7 +67,7 @@ describe('AuthService', () => {
       isAdmin: false,
     };
     jest.spyOn(userService, 'getByEmail').mockImplementation(async () => user);
-    const result = await service.signIn('test@test.com', 'password');
+    const result = await service.signIn(signInParams);
 
     expect(result).toEqual({ message: 'Unauthorized' });
   });

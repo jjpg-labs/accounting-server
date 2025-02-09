@@ -44,11 +44,15 @@ describe('AuthController', () => {
   });
 
   it('should return UNAUTHORIZED on invalid user', async () => {
-    jest.spyOn(authService, 'signIn').mockImplementation(async () => null);
+    const result = {
+      message: 'Unauthorized',
+    };
+
+    jest.spyOn(authService, 'signIn').mockImplementation(async () => result);
 
     await controller.signIn({ email: 'invalid@test.com', pass: 'wrongpassword' }, mockResponse as Response);
 
     expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.UNAUTHORIZED);
-    expect(mockResponse.json).toHaveBeenCalledWith(null);
+    expect(mockResponse.json).toHaveBeenCalledWith(result);
   });
 });

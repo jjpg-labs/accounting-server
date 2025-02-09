@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, Res } from '@nestjs/common';
+import { Body, Controller, HttpStatus, Post, Res } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { Public } from './auth.guard';
 import { Response } from 'express';
@@ -10,9 +10,9 @@ export class AuthController {
   @Public()
   @Post('login')
   async signIn(@Body() signInDto: { email: string; pass: string }, @Res() res: Response) {
-    const response = await this.authService.signIn(signInDto.email, signInDto.pass);
+    const response = await this.authService.signIn({ email: signInDto.email, pass: signInDto.pass });
 
-    const status = response ? HttpStatus.OK : HttpStatus.UNAUTHORIZED;
+    const status = 'message' in response ? HttpStatus.UNAUTHORIZED : HttpStatus.OK;
 
     return res.status(status).json(response);
   }
