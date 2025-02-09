@@ -4,7 +4,7 @@ import { PrismaService } from '../services/prisma.service';
 
 @Injectable()
 export class AccountingBookService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
   async createAccountingBook(
     data: Prisma.AccountingBookCreateInput,
@@ -15,10 +15,9 @@ export class AccountingBookService {
   }
 
   async get(id: number): Promise<AccountingBook | null> {
-    const numericId = Number(id);
     return this.prisma.accountingBook.findUnique({
       where: {
-        id: numericId,
+        id,
       },
     });
   }
@@ -27,12 +26,15 @@ export class AccountingBookService {
     id: number,
     data: Prisma.AccountingBookUpdateInput,
   ): Promise<AccountingBook | null> {
-    const numericId = Number(id);
-    return this.prisma.accountingBook.update({
-      where: {
-        id: numericId,
-      },
-      data,
-    });
+    try {
+      return this.prisma.accountingBook.update({
+        where: {
+          id,
+        },
+        data,
+      });
+    } catch (error) {
+      return null;
+    }
   }
 }
