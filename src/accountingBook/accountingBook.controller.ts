@@ -12,10 +12,13 @@ export class AccountingBookController {
     @Body() data: Prisma.AccountingBookCreateInput,
     @Res() res: Response,
   ) {
-    const newAccountingBook = await this.accountingBookService.createAccountingBook(data) || { message: 'Accounting book not created' };
-    const status = 'message' in newAccountingBook ? HttpStatus.BAD_REQUEST : HttpStatus.CREATED;
-
-    return res.status(status).json(newAccountingBook);
+    try {
+      const newAccountingBook = await this.accountingBookService.createAccountingBook(data) || { message: 'Accounting book not created' };
+      const status = 'message' in newAccountingBook ? HttpStatus.BAD_REQUEST : HttpStatus.CREATED;
+      res.status(status).json(newAccountingBook);
+    } catch (error) {
+      res.status(HttpStatus.BAD_REQUEST).json({ message: 'An error occurred', });
+    }
   }
 
   @Get()
@@ -23,10 +26,14 @@ export class AccountingBookController {
     @Query('id') id: number,
     @Res() res: Response,
   ) {
-    const accountigBook = await this.accountingBookService.get(id) || { message: 'Accounting book not found' };
-    const status = 'message' in accountigBook ? HttpStatus.NOT_FOUND : HttpStatus.OK;
+    try {
+      const accountigBook = await this.accountingBookService.get(id) || { message: 'Accounting book not found' };
+      const status = 'message' in accountigBook ? HttpStatus.NOT_FOUND : HttpStatus.OK;
 
-    return res.status(status).json(accountigBook);
+      res.status(status).json(accountigBook);
+    } catch (error) {
+      res.status(HttpStatus.BAD_REQUEST).json({ message: 'An error occurred', });
+    }
   }
 
   @Put()
@@ -41,9 +48,9 @@ export class AccountingBookController {
     try {
       const accountingBook = await this.accountingBookService.update(data.id, data);
       const status = accountingBook ? HttpStatus.OK : HttpStatus.BAD_REQUEST;
-      return res.status(status).json(accountingBook || { message: 'Accounting book not updated' });
+      res.status(status).json(accountingBook || { message: 'Accounting book not updated' });
     } catch (error) {
-      return res.status(HttpStatus.BAD_REQUEST).json({ message: 'An error occurred', });
+      res.status(HttpStatus.BAD_REQUEST).json({ message: 'An error occurred', });
     }
   }
 }

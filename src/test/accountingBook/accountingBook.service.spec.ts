@@ -42,6 +42,19 @@ describe('AccountingBookService', () => {
 
       expect(await service.createAccountingBook(data)).toEqual(result);
     });
+
+    it('should return null if an error occurs', async () => {
+      const data: Prisma.AccountingBookCreateInput = {
+        name: 'Test Book',
+        user,
+      };
+
+      jest.spyOn(prisma.accountingBook, 'create').mockImplementation(() => {
+        throw new Error();
+      });
+
+      expect(await service.createAccountingBook(data)).toBeNull();
+    });
   });
 
   describe('get', () => {
@@ -65,6 +78,16 @@ describe('AccountingBookService', () => {
       const id = 1;
 
       jest.spyOn(prisma.accountingBook, 'findUnique').mockResolvedValue(null);
+
+      expect(await service.get(id)).toBeNull();
+    });
+
+    it('should return null if an error occurs', async () => {
+      const id = 1;
+
+      jest.spyOn(prisma.accountingBook, 'findUnique').mockImplementation(() => {
+        throw new Error();
+      });
 
       expect(await service.get(id)).toBeNull();
     });

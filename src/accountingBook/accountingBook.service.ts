@@ -9,17 +9,25 @@ export class AccountingBookService {
   async createAccountingBook(
     data: Prisma.AccountingBookCreateInput,
   ): Promise<AccountingBook | null> {
-    return this.prisma.accountingBook.create({
-      data,
-    });
+    try {
+      return await this.prisma.accountingBook.create({
+        data,
+      });
+    } catch (error) {
+      return null;
+    }
   }
 
   async get(id: number): Promise<AccountingBook | null> {
-    return this.prisma.accountingBook.findUnique({
-      where: {
-        id,
-      },
-    });
+    try {
+      return await this.prisma.accountingBook.findUnique({
+        where: {
+          id,
+        },
+      });
+    } catch (error) {
+      return null;
+    }
   }
 
   async update(
@@ -27,7 +35,7 @@ export class AccountingBookService {
     data: Prisma.AccountingBookUpdateInput,
   ): Promise<AccountingBook | null> {
     try {
-      return this.prisma.accountingBook.update({
+      return await this.prisma.accountingBook.update({
         where: {
           id,
         },

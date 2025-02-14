@@ -42,6 +42,17 @@ describe('SupplierService', () => {
 
       expect(await service.create(supplierData)).toEqual(createdSupplier);
     });
+
+    it('should return null if supplier creation fails', async () => {
+      const supplierData: Prisma.SupplierCreateInput = {
+        name: 'Test Supplier',
+        user,
+      };
+
+      jest.spyOn(prisma.supplier, 'create').mockRejectedValue(new Error());
+
+      await expect(service.create(supplierData)).resolves.toBeNull();
+    });
   });
 
   describe('update', () => {
@@ -61,6 +72,26 @@ describe('SupplierService', () => {
 
       expect(await service.update(1, supplierData)).toEqual(updatedSupplier);
     });
+
+    it('should return null if supplier does not exist', async () => {
+      const supplierData: Prisma.SupplierUpdateInput = {
+        name: 'Updated Supplier',
+      };
+
+      jest.spyOn(prisma.supplier, 'update').mockResolvedValue(null);
+
+      await expect(service.update(1, supplierData)).resolves.toBeNull();
+    });
+
+    it('should return null if an error occurs', async () => {
+      const supplierData: Prisma.SupplierUpdateInput = {
+        name: 'Updated Supplier',
+      };
+
+      jest.spyOn(prisma.supplier, 'update').mockRejectedValue(new Error());
+
+      await expect(service.update(1, supplierData)).resolves.toBeNull();
+    });
   });
 
   describe('get', () => {
@@ -76,6 +107,18 @@ describe('SupplierService', () => {
       jest.spyOn(prisma.supplier, 'findUnique').mockResolvedValue(supplier);
 
       expect(await service.get(1)).toEqual(supplier);
+    });
+
+    it('should return null if supplier does not exist', async () => {
+      jest.spyOn(prisma.supplier, 'findUnique').mockResolvedValue(null);
+
+      await expect(service.get(1)).resolves.toBeNull();
+    });
+
+    it('should return null if an error occurs', async () => {
+      jest.spyOn(prisma.supplier, 'findUnique').mockRejectedValue(new Error());
+
+      await expect(service.get(1)).resolves.toBeNull();
     });
   });
 
@@ -102,6 +145,18 @@ describe('SupplierService', () => {
 
       expect(await service.getAll(1)).toEqual(suppliers);
     });
+
+    it('should return an empty array if no suppliers exist', async () => {
+      jest.spyOn(prisma.supplier, 'findMany').mockResolvedValue([]);
+
+      await expect(service.getAll(1)).resolves.toEqual([]);
+    });
+
+    it('should return an empty array if an error occurs', async () => {
+      jest.spyOn(prisma.supplier, 'findMany').mockRejectedValue(new Error());
+
+      await expect(service.getAll(1)).resolves.toEqual([]);
+    });
   });
 
   describe('delete', () => {
@@ -117,6 +172,18 @@ describe('SupplierService', () => {
       jest.spyOn(prisma.supplier, 'delete').mockResolvedValue(supplier);
 
       expect(await service.delete(1)).toEqual(supplier);
+    });
+
+    it('should return null if supplier does not exist', async () => {
+      jest.spyOn(prisma.supplier, 'delete').mockResolvedValue(null);
+
+      await expect(service.delete(1)).resolves.toBeNull();
+    });
+
+    it('should return null if an error occurs', async () => {
+      jest.spyOn(prisma.supplier, 'delete').mockRejectedValue(new Error());
+
+      await expect(service.delete(1)).resolves.toBeNull();
     });
   });
 });
