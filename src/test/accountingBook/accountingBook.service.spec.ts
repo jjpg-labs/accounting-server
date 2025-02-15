@@ -140,4 +140,40 @@ describe('AccountingBookService', () => {
       expect(await service.update(id, data)).toBeNull();
     });
   });
+
+  describe('delete', () => {
+    it('should delete an accounting book', async () => {
+      const id = 1;
+      const result: AccountingBook = {
+        id: 1,
+        name: 'Test Book',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        userId: 1,
+        isBusiness: false,
+      };
+
+      jest.spyOn(prisma.accountingBook, 'delete').mockResolvedValue(result);
+
+      expect(await service.delete(id)).toEqual(result);
+    });
+
+    it('should return null if accounting book not found', async () => {
+      const id = 1;
+
+      jest.spyOn(prisma.accountingBook, 'delete').mockResolvedValue(null);
+
+      expect(await service.delete(id)).toBeNull();
+    });
+
+    it('should return null if an error occurs', async () => {
+      const id = 1;
+
+      jest.spyOn(prisma.accountingBook, 'delete').mockImplementation(() => {
+        throw new Error();
+      });
+
+      expect(await service.delete(id)).toBeNull();
+    });
+  });
 });

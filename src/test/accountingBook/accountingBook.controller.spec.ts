@@ -25,6 +25,7 @@ describe('AccountingBookController', () => {
               .mockResolvedValue({ id: 1, name: 'Test Book' }),
             get: jest.fn().mockResolvedValue({ id: 1, name: 'Test Book' }),
             update: jest.fn().mockResolvedValue({ id: 1, name: 'Test Book' }),
+            delete: jest.fn().mockResolvedValue({ id: 1, name: 'Test Book' }),
           },
         },
       ],
@@ -189,6 +190,49 @@ describe('AccountingBookController', () => {
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
       expect(mockResponse.json).toHaveBeenCalledWith({ message: 'An error occurred' });
       expect(service.update).toHaveBeenCalledWith(id, data);
+    });
+  });
+
+  describe('deleteAccountingBook', () => {
+    it('should delete an accounting book', async () => {
+      const id = 1;
+      const result: AccountingBook = {
+        id,
+        name: 'Test Book',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        userId: 1,
+        isBusiness: false,
+      };
+
+      jest.spyOn(service, 'delete').mockResolvedValue(result);
+      await controller.deleteAccountingBook(id, mockResponse as Response);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.OK);
+      expect(mockResponse.json).toHaveBeenCalledWith(result);
+      expect(service.delete).toHaveBeenCalledWith(id);
+    });
+
+    it('should return BAD_REQUEST status if delete fails', async () => {
+      const id = 1;
+
+      jest.spyOn(service, 'delete').mockResolvedValue(null);
+      await controller.deleteAccountingBook(id, mockResponse as Response);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Accounting book not deleted' });
+      expect(service.delete).toHaveBeenCalledWith(id);
+    });
+
+    it('should return BAD_REQUEST status if an error occurs', async () => {
+      const id = 1;
+
+      jest.spyOn(service, 'delete').mockRejectedValue(new Error());
+      await controller.deleteAccountingBook(id, mockResponse as Response);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'An error occurred' });
+      expect(service.delete).toHaveBeenCalledWith(id);
     });
   });
 });

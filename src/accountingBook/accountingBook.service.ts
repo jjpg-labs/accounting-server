@@ -45,4 +45,16 @@ export class AccountingBookService {
       return null;
     }
   }
+
+  async delete(id: number): Promise<AccountingBook | null> {
+    try {
+      return await this.prisma.accountingBook.delete({
+        where: {
+          id,
+        },
+      });
+    } catch (error) {
+      return null;
+    }
+  }
 }
