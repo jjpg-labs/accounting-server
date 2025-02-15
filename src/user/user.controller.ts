@@ -1,44 +1,104 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpStatus,
   Post,
   Put,
   Query,
+  Res,
   SetMetadata,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { Prisma, User } from '@prisma/client';
+import { Response } from 'express';
 
 @Controller('user')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly userService: UserService) { }
 
   @Post()
   @SetMetadata('isPublic', true)
-  async createUser(@Body() data: Prisma.UserCreateInput): Promise<User | null> {
-    return this.userService.createUser(data);
+  async createUser(@Body() data: Prisma.UserCreateInput, @Res() res: Response) {
+    try {
+      const user = await this.userService.createUser(data);
+      const status = user ? HttpStatus.CREATED : HttpStatus.BAD_REQUEST;
+      res.status(status).json(user || { message: 'Could not create user' });
+    } catch (error) {
+      res.status(HttpStatus.BAD_REQUEST).json({ message: 'Unknown error' });
+    }
   }
 
   @Get()
   async getUser(
+    @Res() res: Response,
     @Query('id') id?: number,
-    @Query('email') email?: string,
-  ): Promise<User | null> {
-    if (id) return this.userService.get(id);
-    if (email) return this.userService.getByEmail(email);
+    @Query('email') email?: string
+  ) {
+    if (!id && !email) {
+      res.status(HttpStatus.BAD_REQUEST).json({ message: 'Invalid user ID or email' });
+    }
+
+    try {
+      let status: number;
+      let user: User | null;
+
+      if (id) {
+        user = await this.userService.get(id);
+        status = user?.id ? HttpStatus.OK : HttpStatus.NO_CONTENT;
+      } else {
+        user = await this.userService.getByEmail(email);
+        status = user?.id ? HttpStatus.OK : HttpStatus.NO_CONTENT;
+      }
+
+      res.status(status).json(user);
+    } catch (error) {
+      res.status(HttpStatus.BAD_REQUEST).json({ message: 'Unknown error' });
+    }
   }
 
   @Put()
   async updateUser(
-    @Query('id') id: number,
-    @Body() data: Prisma.UserUpdateInput,
-  ): Promise<User | null> {
-    return this.userService.update(id, data);
+    @Body() data: Prisma.UserUncheckedUpdateInput,
+    @Res() res: Response
+  ) {
+    if (typeof data.id !== 'number') {
+      res.status(HttpStatus.BAD_REQUEST).json({ message: 'Invalid user ID' });
+    }
+
+    try {
+      const user = await this.userService.update(Number(data.id), data) || { message: 'Could not update user' };
+      const status = 'message' in user ? HttpStatus.BAD_REQUEST : HttpStatus.OK;
+      res.status(status).json(user);
+    } catch (error) {
+      res.status(HttpStatus.BAD_REQUEST).json({ message: 'Unknown error' });
+    }
   }
 
   @Get('all')
-  async getUsers(): Promise<User[]> {
-    return this.userService.getAll();
+  async getUsers(@Res() res: Response) {
+    try {
+      const users = await this.userService.getAll();
+      const status = users.length ? HttpStatus.OK : HttpStatus.NO_CONTENT;
+      res.status(status).json(users);
+    } catch (error) {
+      res.status(HttpStatus.BAD_REQUEST).json({ message: 'Unknown error' });
+    }
+  }
+
+  @Delete()
+  async deleteUser(@Query('id') id: number, @Res() res: Response) {
+    if (!id) {
+      res.status(HttpStatus.BAD_REQUEST).json({ message: 'Invalid user ID' });
+    }
+
+    try {
+      const user = await this.userService.delete(id) || { message: 'Could not delete user' };
+      const status = 'message' in user ? HttpStatus.BAD_REQUEST : HttpStatus.OK;
+      res.status(status).json(user);
+    } catch (error) {
+      res.status(HttpStatus.BAD_REQUEST).json({ message: 'Unknown error' });
+    }
   }
 }

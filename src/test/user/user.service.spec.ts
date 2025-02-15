@@ -46,6 +46,14 @@ describe('UserService', () => {
 
       expect(await service.getByEmail(email)).toBeNull();
     });
+
+    it('should return null if an error occured', async () => {
+      const email = 'error@example.com';
+
+      jest.spyOn(prismaService.user, 'findUnique').mockRejectedValue(new Error());
+
+      expect(await service.getByEmail(email)).toBeNull();
+    })
   });
 
   describe('createUser', () => {
@@ -83,32 +91,52 @@ describe('UserService', () => {
       expect(await service.createUser(data)).toBeNull();
     });
 
-    describe('get', () => {
-      it('should return a user if found', async () => {
-        const id = 1;
-        const user: User = {
-          id,
-          name: 'Test',
-          email: 'test@example.com',
-          password: 'password',
-          enabled: true,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          isAdmin: false,
-        };
+    it('should return null if an error occurs', async () => {
+      const data: Prisma.UserCreateInput = {
+        name: 'Test',
+        email: 'error@example.com',
+        password: 'password',
+      };
 
-        jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(user);
+      jest.spyOn(prismaService.user, 'create').mockRejectedValue(new Error());
 
-        expect(await service.get(id)).toEqual(user);
-      });
+      expect(await service.createUser(data)).toBeNull();
+    });
+  });
 
-      it('should return null if no user is found', async () => {
-        const id = 2;
+  describe('get', () => {
+    it('should return a user if found', async () => {
+      const id = 1;
+      const user: User = {
+        id,
+        name: 'Test',
+        email: 'test@example.com',
+        password: 'password',
+        enabled: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        isAdmin: false,
+      };
 
-        jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(null);
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(user);
 
-        expect(await service.get(id)).toBeNull();
-      });
+      expect(await service.get(id)).toEqual(user);
+    });
+
+    it('should return null if no user is found', async () => {
+      const id = 2;
+
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(null);
+
+      expect(await service.get(id)).toBeNull();
+    });
+
+    it('should return null if an error occurs', async () => {
+      const id = 3;
+
+      jest.spyOn(prismaService.user, 'findUnique').mockRejectedValue(new Error());
+
+      expect(await service.get(id)).toBeNull();
     });
   });
 
@@ -147,6 +175,12 @@ describe('UserService', () => {
 
       expect(await service.getAll()).toEqual([]);
     });
+
+    it('should return an empty array if an error occurs', async () => {
+      jest.spyOn(prismaService.user, 'findMany').mockRejectedValue(new Error());
+
+      expect(await service.getAll()).toEqual([]);
+    });
   });
 
   describe('update', () => {
@@ -176,6 +210,51 @@ describe('UserService', () => {
       jest.spyOn(prismaService.user, 'update').mockResolvedValue(null);
 
       expect(await service.update(id, data)).toBeNull();
+    });
+
+    it('should return null if an error occurs', async () => {
+      const id = 1;
+      const data: Prisma.UserUpdateInput = { name: 'Updated Test' };
+
+      jest.spyOn(prismaService.user, 'update').mockRejectedValue(new Error());
+
+      expect(await service.update(id, data)).toBeNull();
+    });
+  });
+
+  describe('delete', () => {
+    it('should delete and return the user', async () => {
+      const id = 1;
+      const user: User = {
+        id,
+        name: 'Test',
+        email: 'deleted@example.com',
+        password: 'password',
+        enabled: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        isAdmin: false,
+      };
+
+      jest.spyOn(prismaService.user, 'delete').mockResolvedValue(user);
+
+      expect(await service.delete(id)).toEqual(user);
+    });
+
+    it('should return null if user deletion fails', async () => {
+      const id = 1;
+
+      jest.spyOn(prismaService.user, 'delete').mockResolvedValue(null);
+
+      expect(await service.delete(id)).toBeNull();
+    });
+
+    it('should return null if an error occurs', async () => {
+      const id = 1;
+
+      jest.spyOn(prismaService.user, 'delete').mockRejectedValue(new Error());
+
+      expect(await service.delete(id)).toBeNull();
     });
   });
 });
