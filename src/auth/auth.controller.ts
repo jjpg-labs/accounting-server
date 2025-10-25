@@ -35,7 +35,6 @@ export class AuthController {
 
   @Get('me')
   getProfile(@Req() req: { user: DecodedToken }) {
-    console.log(req.user);
     return {
       id: req.user.sub,
       email: req.user.username,
