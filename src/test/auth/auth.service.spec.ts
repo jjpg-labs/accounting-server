@@ -49,7 +49,11 @@ describe('AuthService', () => {
     jest.spyOn(jwtService, 'signAsync').mockImplementation(async () => 'token');
     const result = await service.signIn(signInParams);
     expect(result).toBeDefined();
-    expect(result).toEqual({ accessToken: 'token', refreshToken: 'token' });
+    expect(result).toEqual({
+      accessToken: 'token',
+      refreshToken: 'token',
+      user: { id, email: signInParams.email },
+    });
   });
 
   it('should return unauthorized message if user not found', async () => {

@@ -24,6 +24,10 @@ export class AuthService {
       refreshToken: await this.jwtService.signAsync(payload, {
         expiresIn: '90d',
       }),
+      user: {
+        id: user.id,
+        email: user.email,
+      },
     };
   }
 }
