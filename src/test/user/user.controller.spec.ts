@@ -5,6 +5,10 @@ import { Prisma, User } from '@prisma/client';
 import { HttpStatus, INestApplication } from '@nestjs/common';
 import { Response } from 'express';
 
+let logSpy: jest.SpyInstance;
+let errorSpy: jest.SpyInstance;
+let warnSpy: jest.SpyInstance;
+
 describe('UserController', () => {
   const testUser = {
     id: 1,
@@ -72,6 +76,18 @@ describe('UserController', () => {
     } as Partial<Response>;
   });
 
+  beforeEach(() => {
+    logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    logSpy.mockRestore();
+    errorSpy.mockRestore();
+    warnSpy.mockRestore();
+  });
+
   describe('User creation', () => {
     const userData: Prisma.UserCreateInput = {
       email: 'test@example.com',
@@ -96,19 +112,21 @@ describe('UserController', () => {
       await controller.createUser(userData, mockResponse as Response);
 
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Could not create user' });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Could not create user',
+      });
     });
 
     it('should return an unknown error status', async () => {
-      jest
-        .spyOn(userService, 'createUser')
-        .mockImplementation(async () => {
-          throw new Error();
-        });
+      jest.spyOn(userService, 'createUser').mockImplementation(async () => {
+        throw new Error();
+      });
       await controller.createUser(userData, mockResponse as Response);
 
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Unknown error' });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Unknown error',
+      });
     });
   });
 
@@ -125,15 +143,25 @@ describe('UserController', () => {
       jest
         .spyOn(userService, 'getByEmail')
         .mockImplementation(async () => testUser);
-      await controller.getUser(mockResponse as Response, null, 'test@example.com');
+      await controller.getUser(
+        mockResponse as Response,
+        null,
+        'test@example.com',
+      );
 
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.OK);
       expect(mockResponse.json).toHaveBeenCalledWith(testUser);
     });
 
     it('should return a no content status if user not found by email', async () => {
-      jest.spyOn(userService, 'getByEmail').mockImplementation(async () => null);
-      await controller.getUser(mockResponse as Response, null, 'tet@example.com');
+      jest
+        .spyOn(userService, 'getByEmail')
+        .mockImplementation(async () => null);
+      await controller.getUser(
+        mockResponse as Response,
+        null,
+        'tet@example.com',
+      );
 
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.NO_CONTENT);
       expect(mockResponse.json).toHaveBeenCalledWith(null);
@@ -143,7 +171,9 @@ describe('UserController', () => {
       await controller.getUser(mockResponse as Response, null, null);
 
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Invalid user ID or email' });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Invalid user ID or email',
+      });
     });
 
     it('should return a no content status', async () => {
@@ -155,19 +185,21 @@ describe('UserController', () => {
     });
 
     it('should return an unknown error status', async () => {
-      jest
-        .spyOn(userService, 'get')
-        .mockImplementation(async () => {
-          throw new Error();
-        });
+      jest.spyOn(userService, 'get').mockImplementation(async () => {
+        throw new Error();
+      });
       await controller.getUser(mockResponse as Response, 1);
 
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Unknown error' });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Unknown error',
+      });
     });
 
     it('should retrieve all users', async () => {
-      jest.spyOn(userService, 'getAll').mockImplementation(async () => testUsers);
+      jest
+        .spyOn(userService, 'getAll')
+        .mockImplementation(async () => testUsers);
       await controller.getUsers(mockResponse as Response);
 
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.OK);
@@ -175,15 +207,15 @@ describe('UserController', () => {
     });
 
     it('should return an unknown error status', async () => {
-      jest
-        .spyOn(userService, 'getAll')
-        .mockImplementation(async () => {
-          throw new Error();
-        });
+      jest.spyOn(userService, 'getAll').mockImplementation(async () => {
+        throw new Error();
+      });
       await controller.getUsers(mockResponse as Response);
 
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Unknown error' });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Unknown error',
+      });
     });
 
     it('should return a no content status', async () => {
@@ -209,31 +241,33 @@ describe('UserController', () => {
     });
 
     it('should return a bad request status', async () => {
-      jest
-        .spyOn(userService, 'update')
-        .mockImplementation(async () => null);
+      jest.spyOn(userService, 'update').mockImplementation(async () => null);
       await controller.updateUser(updateData, mockResponse as Response);
 
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Could not update user' });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Could not update user',
+      });
     });
 
     it('should return an unknown error status', async () => {
-      jest
-        .spyOn(userService, 'update')
-        .mockImplementation(async () => {
-          throw new Error();
-        });
+      jest.spyOn(userService, 'update').mockImplementation(async () => {
+        throw new Error();
+      });
       await controller.updateUser(updateData, mockResponse as Response);
 
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Unknown error' });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Unknown error',
+      });
     });
   });
 
   describe('Delete user', () => {
     it('should delete an user', async () => {
-      jest.spyOn(userService, 'delete').mockImplementation(async () => testUser);
+      jest
+        .spyOn(userService, 'delete')
+        .mockImplementation(async () => testUser);
       await controller.deleteUser(1, mockResponse as Response);
 
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.OK);
@@ -244,7 +278,9 @@ describe('UserController', () => {
       await controller.deleteUser(null, mockResponse as Response);
 
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Invalid user ID' });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Invalid user ID',
+      });
     });
 
     it('should return a bad request status', async () => {
@@ -252,19 +288,21 @@ describe('UserController', () => {
       await controller.deleteUser(1, mockResponse as Response);
 
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Could not delete user' });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Could not delete user',
+      });
     });
 
     it('should return an unknown error status', async () => {
-      jest
-        .spyOn(userService, 'delete')
-        .mockImplementation(async () => {
-          throw new Error();
-        });
+      jest.spyOn(userService, 'delete').mockImplementation(async () => {
+        throw new Error();
+      });
       await controller.deleteUser(1, mockResponse as Response);
 
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Unknown error' });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Unknown error',
+      });
     });
   });
 

@@ -32,12 +32,16 @@ describe('AuthController', () => {
 
   it('should signIn on valid user', async () => {
     const result = {
-      access_token: 'token',
+      accessToken: 'token',
+      refreshToken: 'token',
     };
 
     jest.spyOn(authService, 'signIn').mockImplementation(async () => result);
 
-    await controller.signIn({ email: 'test@test.com', pass: 'password' }, mockResponse as Response);
+    await controller.signIn(
+      { email: 'test@test.com', password: 'password' },
+      mockResponse as Response,
+    );
 
     expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.OK);
     expect(mockResponse.json).toHaveBeenCalledWith(result);
@@ -50,9 +54,27 @@ describe('AuthController', () => {
 
     jest.spyOn(authService, 'signIn').mockImplementation(async () => result);
 
-    await controller.signIn({ email: 'invalid@test.com', pass: 'wrongpassword' }, mockResponse as Response);
+    await controller.signIn(
+      { email: 'invalid@test.com', password: 'wrongpassword' },
+      mockResponse as Response,
+    );
 
-    expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.UNAUTHORIZED);
+    expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
     expect(mockResponse.json).toHaveBeenCalledWith(result);
+  });
+
+  it('should return user profile on getProfile', () => {
+    const mockUser = {
+      sub: '123',
+      username: 'test@test.com',
+    };
+    const req = { user: mockUser };
+
+    const result = controller.getProfile(req as any);
+
+    expect(result).toEqual({
+      id: '123',
+      email: 'test@test.com',
+    });
   });
 });

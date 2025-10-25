@@ -9,7 +9,10 @@ describe('AuthService', () => {
   let service: AuthService;
   let userService: UserService;
   let jwtService: JwtService;
-  const signInParams: SignInParams = { email: 'test@test.com', pass: 'password' };
+  const signInParams: SignInParams = {
+    email: 'test@test.com',
+    password: 'password',
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -33,7 +36,7 @@ describe('AuthService', () => {
     const enabled = true;
     const isAdmin = false;
     const user = {
-      password: signInParams.pass,
+      password: signInParams.password,
       name,
       id,
       email: signInParams.email,
@@ -46,7 +49,7 @@ describe('AuthService', () => {
     jest.spyOn(jwtService, 'signAsync').mockImplementation(async () => 'token');
     const result = await service.signIn(signInParams);
     expect(result).toBeDefined();
-    expect(result).toEqual({ access_token: 'token' });
+    expect(result).toEqual({ accessToken: 'token', refreshToken: 'token' });
   });
 
   it('should return unauthorized message if user not found', async () => {

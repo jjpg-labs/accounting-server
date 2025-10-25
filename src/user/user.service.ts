@@ -4,7 +4,7 @@ import { PrismaService } from '../services/prisma.service';
 
 @Injectable()
 export class UserService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   async createUser(data: Prisma.UserCreateInput): Promise<User | null> {
     try {
@@ -70,7 +70,7 @@ export class UserService {
       return await this.prisma.user.delete({
         where: {
           id,
-        }
+        },
       });
     } catch (error) {
       return null;

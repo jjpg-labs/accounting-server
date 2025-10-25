@@ -3,6 +3,10 @@ import { PrismaService } from '../../services/prisma.service';
 import { UserService } from '../../user/user.service';
 import { Prisma, User } from '@prisma/client';
 
+let logSpy: jest.SpyInstance;
+let errorSpy: jest.SpyInstance;
+let warnSpy: jest.SpyInstance;
+
 describe('UserService', () => {
   let service: UserService;
   let prismaService: PrismaService;
@@ -14,6 +18,16 @@ describe('UserService', () => {
 
     service = module.get<UserService>(UserService);
     prismaService = module.get<PrismaService>(PrismaService);
+
+    logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    logSpy.mockRestore();
+    errorSpy.mockRestore();
+    warnSpy.mockRestore();
   });
 
   it('should be defined', () => {
@@ -50,10 +64,12 @@ describe('UserService', () => {
     it('should return null if an error occured', async () => {
       const email = 'error@example.com';
 
-      jest.spyOn(prismaService.user, 'findUnique').mockRejectedValue(new Error());
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockRejectedValue(new Error());
 
       expect(await service.getByEmail(email)).toBeNull();
-    })
+    });
   });
 
   describe('createUser', () => {
@@ -134,7 +150,9 @@ describe('UserService', () => {
     it('should return null if an error occurs', async () => {
       const id = 3;
 
-      jest.spyOn(prismaService.user, 'findUnique').mockRejectedValue(new Error());
+      jest
+        .spyOn(prismaService.user, 'findUnique')
+        .mockRejectedValue(new Error());
 
       expect(await service.get(id)).toBeNull();
     });

@@ -8,19 +8,22 @@ export class AuthService {
   constructor(
     private userService: UserService,
     private jwtService: JwtService,
-  ) { }
+  ) {}
 
-  async signIn({ email, pass }: SignInParams): Promise<SignInResponse> {
+  async signIn({ email, password }: SignInParams): Promise<SignInResponse> {
     const user = await this.userService.getByEmail(email);
 
-    if (!user || user.password !== pass) {
+    if (!user || user.password !== password) {
       return { message: 'Unauthorized' };
     }
 
     const payload = { sub: user.id, username: user.email };
 
     return {
-      access_token: await this.jwtService.signAsync(payload),
+      accessToken: await this.jwtService.signAsync(payload),
+      refreshToken: await this.jwtService.signAsync(payload, {
+        expiresIn: '90d',
+      }),
     };
   }
 }

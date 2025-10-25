@@ -1,11 +1,19 @@
 export type SignInParams = {
-	email: string,
-	pass: string
+  email: string;
+  password: string;
 };
 
 export type SignInResponse = {
-	message?: string,
-	access_token?: string
+  message?: string;
+  accessToken?: string;
+  refreshToken?: string;
 };
 
-export type AuthToken = string | undefined;
+export type DecodedToken = {
+  sub: number;
+  username: string;
+  iat?: number;
+  exp?: number;
+};
+
+export type AccessToken = string | undefined;

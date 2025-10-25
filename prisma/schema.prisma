@@ -7,6 +7,11 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
 model User {
   id              Int              @id @default(autoincrement())
   email           String           @unique
@@ -41,7 +46,7 @@ model Transaction {
   updatedAt        DateTime       @updatedAt
   valueDate        DateTime
   accountingBookId Int
-  type             String
+  type             TransactionType
   supplierId       Int?
   accountingBook   AccountingBook @relation(fields: [accountingBookId], references: [id])
   supplier         Supplier?      @relation(fields: [supplierId], references: [id])

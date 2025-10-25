@@ -72,6 +72,10 @@
     "moduleDirectories": [
       "node_modules",
       "src"
+    ],
+    "coveragePathIgnorePatterns": [
+      "/node_modules/",
+      "src/main.ts"
     ]
   }
 }
