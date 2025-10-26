@@ -12,6 +12,13 @@ enum TransactionType {
   EXPENSE
 }
 
+enum PaymentMethod {
+  CASH
+  CARD
+  TRANSFER
+  OTHER
+}
+
 model User {
   id              Int              @id @default(autoincrement())
   email           String           @unique
@@ -32,27 +39,26 @@ model AccountingBook {
   updatedAt    DateTime      @updatedAt
   userId       Int
   isBusiness   Boolean       @default(false)
-  user         User          @relation(fields: [userId], references: [id])
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
+  categories   Category[]
+  dailyReports DailyReport[]
 
-  @@index([userId], map: "AccountingBook_userId_fkey_unique")
+  @@index([userId], map: "AccountingBook_userId_idx")
+  @@unique([userId, name], map: "AccountingBook_userId_name_unique")
 }
 
-model Transaction {
-  id               Int            @id @default(autoincrement())
-  name             String
-  amount           Float
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-  valueDate        DateTime
+model Category {
+  id             Int           @id @default(autoincrement())
+  name           String
+  accountingBook AccountingBook @relation(fields: [accountingBookId], references: [id], onDelete: Cascade)
   accountingBookId Int
-  type             TransactionType
-  supplierId       Int?
-  accountingBook   AccountingBook @relation(fields: [accountingBookId], references: [id])
-  supplier         Supplier?      @relation(fields: [supplierId], references: [id])
+  transactions   Transaction[]
 
-  @@index([accountingBookId], map: "Transaction_accountingBookId_fkey_unique")
-  @@index([supplierId], map: "Transaction_supplierId_fkey_unique")
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@unique([accountingBookId, name], map: "Category_bookId_name_unique")
 }
 
 model Supplier {
@@ -61,8 +67,62 @@ model Supplier {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   userId       Int
-  user         User          @relation(fields: [userId], references: [id])
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
 
-  @@index([userId], map: "Supplier_userId_fkey_unique")
+  @@index([userId], map: "Supplier_userId_idx")
+  @@unique([userId, name], map: "Supplier_userId_name_unique")
+}
+
+model Transaction {
+  id               Int            @id @default(autoincrement())
+  description      String?
+  amount           Decimal        @db.Decimal(14, 2)
+  type             TransactionType
+  paymentMethod    PaymentMethod  @default(CASH)
+  valueDate        DateTime
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  accountingBookId Int
+  accountingBook   AccountingBook @relation(fields: [accountingBookId], references: [id], onDelete: Cascade)
+
+  supplierId       Int?
+  supplier         Supplier?      @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+
+  categoryId       Int?
+  category         Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  dailyReportId    Int?
+  dailyReport      DailyReport?   @relation(fields: [dailyReportId], references: [id], onDelete: SetNull)
+
+  @@index([accountingBookId], map: "Transaction_accountingBookId_idx")
+  @@index([supplierId], map: "Transaction_supplierId_idx")
+  @@index([valueDate], map: "Transaction_valueDate_idx")
+  @@index([accountingBookId, valueDate], map: "tx_book_date_idx")
+}
+
+model DailyReport {
+  id                Int           @id @default(autoincrement())
+  date              DateTime      // fecha del día (ej. 2025-10-26T00:00:00Z)
+  accountingBookId  Int
+  accountingBook    AccountingBook @relation(fields: [accountingBookId], references: [id], onDelete: Cascade)
+
+  openingBalance    Decimal       @db.Decimal(14, 2)
+  totalIncome       Decimal       @db.Decimal(14, 2) @default("0.00")
+  totalExpense      Decimal       @db.Decimal(14, 2) @default("0.00")
+  closingBalance    Decimal       @db.Decimal(14, 2)
+  cashLeftForNext   Decimal       @db.Decimal(14, 2)
+  removedFromCash   Decimal       @db.Decimal(14, 2)
+
+  reconciled        Boolean       @default(false)
+  notes             String?
+
+  transactions      Transaction[]
+
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  @@index([accountingBookId], map: "DailyReport_accountingBookId_idx")
+  @@unique([accountingBookId, date], map: "DailyReport_book_date_unique")
 }
