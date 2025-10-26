@@ -4,7 +4,7 @@ import { PrismaService } from '../services/prisma.service';
 
 @Injectable()
 export class TransactionService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   async createTransaction(
     data: Prisma.TransactionCreateInput,
@@ -14,6 +14,7 @@ export class TransactionService {
         data,
       });
     } catch (error) {
+      console.log(error);
       return null;
     }
   }

@@ -4,10 +4,10 @@ import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import configuration from '../config/configuration';
 import { AuthModule } from './auth/auth.module';
-import { AccountingBookModule } from './accountingBook/accountingBook.module';
+import { AccountingBookModule } from './accountingBooks/accountingBook.module';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from './auth/auth.guard';
-import { TransactionModule } from './transaction/transaction.module';
+import { TransactionModule } from './transactions/transaction.module';
 
 @Module({
   imports: [

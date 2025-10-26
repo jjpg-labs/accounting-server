@@ -15,7 +15,7 @@ import { Response } from 'express';
 
 @Controller('transaction')
 export class TransactionController {
-  constructor(private readonly transactionService: TransactionService) { }
+  constructor(private readonly transactionService: TransactionService) {}
 
   @Post()
   async createTransaction(
@@ -23,8 +23,11 @@ export class TransactionController {
     @Res() res: Response,
   ) {
     try {
-      const transaction = await this.transactionService.createTransaction(data) || { message: 'Failed to create transaction' };
-      const status = 'message' in transaction ? HttpStatus.BAD_REQUEST : HttpStatus.CREATED;
+      const transaction = (await this.transactionService.createTransaction(
+        data,
+      )) || { message: 'Failed to create transaction' };
+      const status =
+        'message' in transaction ? HttpStatus.BAD_REQUEST : HttpStatus.CREATED;
       res.status(status).json(transaction);
     } catch (error) {
       res.status(HttpStatus.BAD_REQUEST).json({ message: 'Unknown error' });
@@ -37,12 +40,18 @@ export class TransactionController {
     @Res() res: Response,
   ) {
     if (typeof data.id !== 'number') {
-      res.status(HttpStatus.BAD_REQUEST).json({ message: 'Transaction id is required' });
+      res
+        .status(HttpStatus.BAD_REQUEST)
+        .json({ message: 'Transaction id is required' });
     }
 
     try {
-      const transaction = await this.transactionService.update(Number(data.id), data) || { message: 'Failed to update transaction' };
-      const status = 'message' in transaction ? HttpStatus.BAD_REQUEST : HttpStatus.OK;
+      const transaction = (await this.transactionService.update(
+        Number(data.id),
+        data,
+      )) || { message: 'Failed to update transaction' };
+      const status =
+        'message' in transaction ? HttpStatus.BAD_REQUEST : HttpStatus.OK;
       res.status(status).json(transaction);
     } catch (error) {
       res.status(HttpStatus.BAD_REQUEST).json({ message: 'Unknown error' });
@@ -52,8 +61,11 @@ export class TransactionController {
   @Get()
   async getTransaction(@Query('id') id: number, @Res() res: Response) {
     try {
-      const transaction = await this.transactionService.get(id) || { message: 'Transaction not found' };
-      const status = 'message' in transaction ? HttpStatus.NOT_FOUND : HttpStatus.OK;
+      const transaction = (await this.transactionService.get(id)) || {
+        message: 'Transaction not found',
+      };
+      const status =
+        'message' in transaction ? HttpStatus.NOT_FOUND : HttpStatus.OK;
       res.status(status).json(transaction);
     } catch (error) {
       res.status(HttpStatus.BAD_REQUEST).json({ message: 'Unknown error' });
@@ -67,7 +79,8 @@ export class TransactionController {
   ) {
     try {
       const transactions = await this.transactionService.getAll(accountingId);
-      const status = transactions.length > 0 ? HttpStatus.OK : HttpStatus.NOT_FOUND;
+      const status =
+        transactions.length > 0 ? HttpStatus.OK : HttpStatus.NOT_FOUND;
       res.status(status).json(transactions);
     } catch (error) {
       res.status(HttpStatus.BAD_REQUEST).json({ message: 'Unknown error' });
@@ -77,8 +90,11 @@ export class TransactionController {
   @Delete()
   async deleteTransaction(@Query() id: number, @Res() res: Response) {
     try {
-      const transaction = await this.transactionService.delete(id) || { message: 'Failed to delete transaction' };
-      const status = 'message' in transaction ? HttpStatus.BAD_REQUEST : HttpStatus.OK;
+      const transaction = (await this.transactionService.delete(id)) || {
+        message: 'Failed to delete transaction',
+      };
+      const status =
+        'message' in transaction ? HttpStatus.BAD_REQUEST : HttpStatus.OK;
       res.status(status).json(transaction);
     } catch (error) {
       res.status(HttpStatus.BAD_REQUEST).json({ message: 'Unknown error' });

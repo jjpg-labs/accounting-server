@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { SupplierService } from '../../supplier/supplier.service';
-import { SupplierController } from '../../supplier/supplier.controller';
+import { SupplierService } from '../../suppliers/supplier.service';
+import { SupplierController } from '../../suppliers/supplier.controller';
 import { PrismaService } from '../../services/prisma.service';
-import { TransactionModule } from '../../supplier/supplier.module';
+import { TransactionModule } from '../../suppliers/supplier.module';
 
 describe('TransactionModule', () => {
   let supplierService: SupplierService;

@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../../services/prisma.service';
-import { TransactionService } from '../../transaction/transaction.service';
+import { TransactionService } from '../../transactions/transaction.service';
 import { Prisma, Transaction } from '@prisma/client';
 
 describe('TransactionService', () => {
@@ -20,17 +20,24 @@ describe('TransactionService', () => {
     it('should update a transaction', async () => {
       const id = 1;
       const valueDate = new Date();
-      const data: Prisma.TransactionUncheckedUpdateInput = { id, amount: 100, valueDate };
+      const data: Prisma.TransactionUncheckedUpdateInput = {
+        id,
+        amount: new Prisma.Decimal(100),
+        valueDate,
+      };
       const updatedTransaction: Transaction = {
         id,
-        amount: 100,
+        amount: new Prisma.Decimal(100),
         accountingBookId: 1,
         createdAt: new Date(),
         updatedAt: new Date(),
         type: 'INCOME',
         supplierId: null,
-        name: 'Test',
-        valueDate
+        description: 'Test',
+        paymentMethod: null,
+        categoryId: null,
+        dailyReportId: null,
+        valueDate,
       };
 
       jest
@@ -42,18 +49,24 @@ describe('TransactionService', () => {
 
     it('should return null if transaction does not exist', async () => {
       const id = 1;
-      const data: Prisma.TransactionUncheckedUpdateInput = { id, amount: 100, valueDate: new Date() };
+      const data: Prisma.TransactionUncheckedUpdateInput = {
+        id,
+        amount: new Prisma.Decimal(100),
+        valueDate: new Date(),
+      };
 
-      jest
-        .spyOn(prismaService.transaction, 'update')
-        .mockResolvedValue(null);
+      jest.spyOn(prismaService.transaction, 'update').mockResolvedValue(null);
 
       await expect(service.update(id, data)).resolves.toBeNull();
     });
 
     it('should return null if transaction update fails', async () => {
       const id = 1;
-      const data: Prisma.TransactionUncheckedUpdateInput = { id, amount: 100, valueDate: new Date() };
+      const data: Prisma.TransactionUncheckedUpdateInput = {
+        id,
+        amount: new Prisma.Decimal(100),
+        valueDate: new Date(),
+      };
 
       jest
         .spyOn(prismaService.transaction, 'update')
@@ -65,34 +78,37 @@ describe('TransactionService', () => {
 
   describe('createTransaction', () => {
     const accountingBook: Prisma.AccountingBookCreateNestedOneWithoutTransactionsInput =
-    {
-      create: {
-        name: 'Test',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        userId: 1,
-      },
-    };
+      {
+        create: {
+          name: 'Test',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          userId: 1,
+        },
+      };
 
     it('should create a new transaction', async () => {
       const valueDate = new Date();
       const data: Prisma.TransactionCreateInput = {
-        amount: 100,
+        amount: new Prisma.Decimal(100),
         accountingBook,
         type: 'INCOME',
-        name: 'Test',
+        description: 'Test',
         valueDate,
       };
       const createdTransaction: Transaction = {
         id: 1,
-        amount: 100,
+        amount: new Prisma.Decimal(100),
         accountingBookId: 1,
         createdAt: new Date(),
         updatedAt: new Date(),
         type: 'INCOME',
         supplierId: null,
-        name: 'Test',
-        valueDate
+        description: 'Test',
+        paymentMethod: null,
+        categoryId: null,
+        dailyReportId: null,
+        valueDate,
       };
 
       jest
@@ -104,26 +120,24 @@ describe('TransactionService', () => {
 
     it('should return null if transaction creation fails', async () => {
       const data: Prisma.TransactionCreateInput = {
-        amount: 100,
+        amount: new Prisma.Decimal(100),
         accountingBook,
         type: 'INCOME',
-        name: 'Test',
+        description: 'Test',
         valueDate: new Date(),
       };
 
-      jest
-        .spyOn(prismaService.transaction, 'create')
-        .mockResolvedValue(null);
+      jest.spyOn(prismaService.transaction, 'create').mockResolvedValue(null);
 
       await expect(service.createTransaction(data)).resolves.toBeNull();
     });
 
     it('should return null if an error occurs', async () => {
       const data: Prisma.TransactionCreateInput = {
-        amount: 100,
+        amount: new Prisma.Decimal(100),
         accountingBook,
         type: 'INCOME',
-        name: 'Test',
+        description: 'Test',
         valueDate: new Date(),
       };
 
@@ -140,13 +154,16 @@ describe('TransactionService', () => {
       const id = 1;
       const transaction: Transaction = {
         id,
-        amount: 100,
+        amount: new Prisma.Decimal(100),
         accountingBookId: 1,
         createdAt: new Date(),
         updatedAt: new Date(),
         type: 'INCOME',
         supplierId: null,
-        name: 'Test',
+        description: 'Test',
+        paymentMethod: null,
+        categoryId: null,
+        dailyReportId: null,
         valueDate: new Date(),
       };
 
@@ -184,24 +201,30 @@ describe('TransactionService', () => {
       const transactions: Transaction[] = [
         {
           id: 1,
-          amount: 100,
+          amount: new Prisma.Decimal(100),
           accountingBookId,
           createdAt: new Date(),
           updatedAt: new Date(),
           type: 'INCOME',
           supplierId: null,
-          name: 'Test',
+          description: 'Test',
+          paymentMethod: null,
+          categoryId: null,
+          dailyReportId: null,
           valueDate: new Date(),
         },
         {
           id: 2,
-          amount: 200,
+          amount: new Prisma.Decimal(200),
           accountingBookId,
           createdAt: new Date(),
           updatedAt: new Date(),
           type: 'EXPENSE',
           supplierId: null,
-          name: 'Test 2',
+          description: 'Test 2',
+          paymentMethod: null,
+          categoryId: null,
+          dailyReportId: null,
           valueDate: new Date(),
         },
       ];
@@ -237,13 +260,16 @@ describe('TransactionService', () => {
       const id = 1;
       const deletedTransaction: Transaction = {
         id,
-        amount: 100,
+        amount: new Prisma.Decimal(100),
         accountingBookId: 1,
         createdAt: new Date(),
         updatedAt: new Date(),
         type: 'INCOME',
         supplierId: null,
-        name: 'Test',
+        description: 'Test',
+        paymentMethod: null,
+        categoryId: null,
+        dailyReportId: null,
         valueDate: new Date(),
       };
 
@@ -257,9 +283,7 @@ describe('TransactionService', () => {
     it('should return null if transaction does not exist', async () => {
       const id = 1;
 
-      jest
-        .spyOn(prismaService.transaction, 'delete')
-        .mockResolvedValue(null);
+      jest.spyOn(prismaService.transaction, 'delete').mockResolvedValue(null);
 
       await expect(service.delete(id)).resolves.toBeNull();
     });
