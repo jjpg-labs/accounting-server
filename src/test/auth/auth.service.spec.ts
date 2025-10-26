@@ -9,6 +9,7 @@ describe('AuthService', () => {
   let service: AuthService;
   let userService: UserService;
   let jwtService: JwtService;
+  let prismaService: PrismaService;
   const signInParams: SignInParams = {
     email: 'test@test.com',
     password: 'password',
@@ -22,6 +23,7 @@ describe('AuthService', () => {
     service = module.get<AuthService>(AuthService);
     userService = module.get<UserService>(UserService);
     jwtService = module.get<JwtService>(JwtService);
+    prismaService = module.get<PrismaService>(PrismaService);
   });
 
   it('should be defined', () => {
@@ -52,6 +54,9 @@ describe('AuthService', () => {
       jest
         .spyOn(jwtService, 'signAsync')
         .mockImplementation(async () => 'token');
+
+      jest.spyOn(prismaService.refreshToken, 'create').mockResolvedValue(null);
+
       const result = await service.signIn(signInParams);
       expect(result).toBeDefined();
       expect(result).toEqual({
@@ -99,6 +104,10 @@ describe('AuthService', () => {
       jest
         .spyOn(jwtService, 'signAsync')
         .mockImplementation(async () => 'token');
+
+      jest.spyOn(prismaService.refreshToken, 'update').mockResolvedValue(null);
+      jest.spyOn(prismaService.refreshToken, 'create').mockResolvedValue(null);
+
       const result = await service.refreshTokens('valid-refresh-token');
       expect(result).toEqual({
         accessToken: 'token',
@@ -112,6 +121,30 @@ describe('AuthService', () => {
         throw new Error('Invalid token');
       });
       const result = await service.refreshTokens('invalid-refresh-token');
+      expect(result).toEqual({ message: 'Invalid refresh token' });
+    });
+  });
+
+  describe('logout', () => {
+    it('should logout successfully on valid refresh token', async () => {
+      jest.spyOn(prismaService.refreshToken, 'update').mockResolvedValue(null);
+      const result = await service.logout('valid-refresh-token');
+      expect(result).toBeUndefined();
+    });
+
+    it('should return invalid refresh token message on non-existing token', async () => {
+      const error: any = new Error('Record to update not found.');
+      error.code = 'P2025';
+      jest.spyOn(prismaService.refreshToken, 'update').mockRejectedValue(error);
+      const result = await service.logout('non-existing-refresh-token');
+      expect(result).toBeUndefined();
+    });
+
+    it('should return invalid refresh token message on other errors', async () => {
+      const error: any = new Error('Some other error');
+      error.code = 'SOME_OTHER_CODE';
+      jest.spyOn(prismaService.refreshToken, 'update').mockRejectedValue(error);
+      const result = await service.logout('valid-refresh-token');
       expect(result).toEqual({ message: 'Invalid refresh token' });
     });
   });

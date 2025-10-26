@@ -26,8 +26,8 @@ describe('SupplierController', () => {
     }),
     getAll: jest.fn((userId: number) => {
       return [
-        { id: 1, name: 'Supplier 1' },
-        { id: 2, name: 'Supplier 2' },
+        { id: 1, name: 'Supplier 1', userId },
+        { id: 2, name: 'Supplier 2', userId },
       ];
     }),
     delete: jest.fn((id: number) => {

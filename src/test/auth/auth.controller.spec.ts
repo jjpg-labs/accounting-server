@@ -10,6 +10,7 @@ import { HttpStatus } from '@nestjs/common';
 describe('AuthController', () => {
   let controller: AuthController;
   let authService: AuthService;
+  let prismaService: PrismaService;
   let mockResponse: Partial<Response>;
 
   beforeEach(async () => {
@@ -20,6 +21,7 @@ describe('AuthController', () => {
 
     controller = module.get<AuthController>(AuthController);
     authService = module.get<AuthService>(AuthService);
+    prismaService = module.get<PrismaService>(PrismaService);
     mockResponse = {
       status: jest.fn().mockReturnThis(),
       json: jest.fn().mockReturnThis(),
@@ -137,6 +139,38 @@ describe('AuthController', () => {
       );
 
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.UNAUTHORIZED);
+      expect(mockResponse.json).toHaveBeenCalledWith(result);
+    });
+  });
+
+  describe('logout', () => {
+    it('should logout successfully on valid refresh token', async () => {
+      jest.spyOn(authService, 'logout').mockImplementation(async () => {});
+
+      await controller.logout(
+        { refreshToken: 'valid-refresh-token' },
+        mockResponse as Response,
+      );
+
+      expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.OK);
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Logged out successfully',
+      });
+    });
+
+    it('should return INVALID refresh token message on invalid token', async () => {
+      const result = {
+        message: 'Invalid refresh token',
+      };
+
+      jest.spyOn(authService, 'logout').mockImplementation(async () => result);
+
+      await controller.logout(
+        { refreshToken: 'invalid-refresh-token' },
+        mockResponse as Response,
+      );
+
+      expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
       expect(mockResponse.json).toHaveBeenCalledWith(result);
     });
   });

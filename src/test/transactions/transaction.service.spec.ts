@@ -6,6 +6,7 @@ import { Prisma, Transaction } from '@prisma/client';
 describe('TransactionService', () => {
   let service: TransactionService;
   let prismaService: PrismaService;
+  let consoleLogSpy: jest.SpyInstance;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -14,6 +15,11 @@ describe('TransactionService', () => {
 
     service = module.get<TransactionService>(TransactionService);
     prismaService = module.get<PrismaService>(PrismaService);
+    consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
+  });
+
+  afterEach(() => {
+    consoleLogSpy.mockRestore();
   });
 
   describe('update', () => {

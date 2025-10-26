@@ -63,4 +63,21 @@ export class AuthController {
 
     return res.status(status).json(response);
   }
+
+  @Post('logout')
+  async logout(
+    @Body() refreshTokenDto: { refreshToken: string },
+    @Res() res: Response,
+  ) {
+    const response = await this.authService.logout(
+      refreshTokenDto.refreshToken,
+    );
+    if (response && 'message' in response) {
+      return res.status(HttpStatus.BAD_REQUEST).json(response);
+    }
+
+    return res
+      .status(HttpStatus.OK)
+      .json({ message: 'Logged out successfully' });
+  }
 }

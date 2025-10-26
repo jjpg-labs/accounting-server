@@ -28,8 +28,21 @@ model User {
   updatedAt       DateTime         @updatedAt
   enabled         Boolean          @default(true)
   isAdmin         Boolean          @default(false)
+  refreshTokens   RefreshToken[]
   accountingBooks AccountingBook[]
   suppliers       Supplier[]
+}
+
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([userId], map: "RefreshToken_userId_idx")
 }
 
 model AccountingBook {
