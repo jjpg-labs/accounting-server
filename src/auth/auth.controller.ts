@@ -34,10 +34,18 @@ export class AuthController {
   }
 
   @Get('me')
-  getProfile(@Req() req: { user: DecodedToken }) {
-    return {
+  getProfile(@Req() req: { user: DecodedToken }, @Res() res: Response) {
+    const user = {
       id: req.user.sub,
       email: req.user.username,
     };
+
+    if (!user.id) {
+      return res
+        .status(HttpStatus.UNAUTHORIZED)
+        .json({ message: 'Unauthorized' });
+    }
+
+    return res.status(HttpStatus.OK).json(user);
   }
 }

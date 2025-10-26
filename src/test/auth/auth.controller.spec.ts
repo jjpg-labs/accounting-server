@@ -30,51 +30,74 @@ describe('AuthController', () => {
     expect(controller).toBeDefined();
   });
 
-  it('should signIn on valid user', async () => {
-    const result = {
-      accessToken: 'token',
-      refreshToken: 'token',
-    };
+  describe('signIn', () => {
+    it('should signIn on valid user', async () => {
+      const result = {
+        accessToken: 'token',
+        refreshToken: 'token',
+      };
 
-    jest.spyOn(authService, 'signIn').mockImplementation(async () => result);
+      jest.spyOn(authService, 'signIn').mockImplementation(async () => result);
 
-    await controller.signIn(
-      { email: 'test@test.com', password: 'password' },
-      mockResponse as Response,
-    );
+      await controller.signIn(
+        { email: 'test@test.com', password: 'password' },
+        mockResponse as Response,
+      );
 
-    expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.OK);
-    expect(mockResponse.json).toHaveBeenCalledWith(result);
+      expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.OK);
+      expect(mockResponse.json).toHaveBeenCalledWith(result);
+    });
+
+    it('should return UNAUTHORIZED on invalid user', async () => {
+      const result = {
+        message: 'Unauthorized',
+      };
+
+      jest.spyOn(authService, 'signIn').mockImplementation(async () => result);
+
+      await controller.signIn(
+        { email: 'invalid@test.com', password: 'wrongpassword' },
+        mockResponse as Response,
+      );
+
+      expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
+      expect(mockResponse.json).toHaveBeenCalledWith(result);
+    });
   });
 
-  it('should return UNAUTHORIZED on invalid user', async () => {
-    const result = {
-      message: 'Unauthorized',
-    };
+  describe('getProfile', () => {
+    it('should return user profile on getProfile', () => {
+      const mockUser = {
+        sub: '123',
+        username: 'test@test.com',
+      };
+      const req = { user: mockUser };
 
-    jest.spyOn(authService, 'signIn').mockImplementation(async () => result);
+      const result = controller.getProfile(
+        req as any,
+        mockResponse as Response,
+      );
 
-    await controller.signIn(
-      { email: 'invalid@test.com', password: 'wrongpassword' },
-      mockResponse as Response,
-    );
+      expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.OK);
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        id: '123',
+        email: 'test@test.com',
+      });
+    });
 
-    expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
-    expect(mockResponse.json).toHaveBeenCalledWith(result);
-  });
+    it('should return UNAUTHORIZED if user id is missing', () => {
+      const mockUser = {
+        sub: null,
+        username: 'test@test.com',
+      };
+      const req = { user: mockUser };
 
-  it('should return user profile on getProfile', () => {
-    const mockUser = {
-      sub: '123',
-      username: 'test@test.com',
-    };
-    const req = { user: mockUser };
+      controller.getProfile(req as any, mockResponse as Response);
 
-    const result = controller.getProfile(req as any);
-
-    expect(result).toEqual({
-      id: '123',
-      email: 'test@test.com',
+      expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.UNAUTHORIZED);
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Unauthorized',
+      });
     });
   });
 });
