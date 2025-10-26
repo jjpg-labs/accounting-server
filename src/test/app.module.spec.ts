@@ -15,7 +15,7 @@ describe('AppModule', () => {
     app = await Test.createTestingModule({
       imports: [
         ConfigModule.forRoot({
-          load: [() => ({})], // Mock configuration
+          load: [() => ({})],
         }),
         AppModule,
         AuthModule,
