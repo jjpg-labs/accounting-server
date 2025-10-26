@@ -28,54 +28,91 @@ describe('AuthService', () => {
     expect(service).toBeDefined();
   });
 
-  it('should signIn on valid user', async () => {
-    const name = 'test';
-    const id = 1;
-    const createdAt = new Date();
-    const updatedAt = new Date();
-    const enabled = true;
-    const isAdmin = false;
-    const user = {
-      password: signInParams.password,
-      name,
-      id,
-      email: signInParams.email,
-      createdAt,
-      updatedAt,
-      enabled,
-      isAdmin,
-    };
-    jest.spyOn(userService, 'getByEmail').mockImplementation(async () => user);
-    jest.spyOn(jwtService, 'signAsync').mockImplementation(async () => 'token');
-    const result = await service.signIn(signInParams);
-    expect(result).toBeDefined();
-    expect(result).toEqual({
-      accessToken: 'token',
-      refreshToken: 'token',
-      user: { id, email: signInParams.email },
+  describe('signIn', () => {
+    it('should signIn on valid user', async () => {
+      const name = 'test';
+      const id = 1;
+      const createdAt = new Date();
+      const updatedAt = new Date();
+      const enabled = true;
+      const isAdmin = false;
+      const user = {
+        password: signInParams.password,
+        name,
+        id,
+        email: signInParams.email,
+        createdAt,
+        updatedAt,
+        enabled,
+        isAdmin,
+      };
+      jest
+        .spyOn(userService, 'getByEmail')
+        .mockImplementation(async () => user);
+      jest
+        .spyOn(jwtService, 'signAsync')
+        .mockImplementation(async () => 'token');
+      const result = await service.signIn(signInParams);
+      expect(result).toBeDefined();
+      expect(result).toEqual({
+        accessToken: 'token',
+        refreshToken: 'token',
+        user: { id, email: signInParams.email },
+      });
+    });
+
+    it('should return unauthorized message if user not found', async () => {
+      jest
+        .spyOn(userService, 'getByEmail')
+        .mockImplementation(async () => null);
+      const result = await service.signIn(signInParams);
+      expect(result).toEqual({ message: 'Unauthorized' });
+    });
+
+    it('should return unauthorized message if password is incorrect', async () => {
+      const user = {
+        password: 'wrongpassword',
+        name: 'test',
+        id: 1,
+        email: 'test@test.com',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        enabled: true,
+        isAdmin: false,
+      };
+      jest
+        .spyOn(userService, 'getByEmail')
+        .mockImplementation(async () => user);
+      const result = await service.signIn(signInParams);
+
+      expect(result).toEqual({ message: 'Unauthorized' });
     });
   });
 
-  it('should return unauthorized message if user not found', async () => {
-    jest.spyOn(userService, 'getByEmail').mockImplementation(async () => null);
-    const result = await service.signIn(signInParams);
-    expect(result).toEqual({ message: 'Unauthorized' });
-  });
+  describe('refreshTokens', () => {
+    it('should refresh tokens on valid refresh token', async () => {
+      const decodedToken = {
+        sub: 1,
+        username: 'test@test.com',
+      };
+      jest.spyOn(jwtService, 'verify').mockImplementation(() => decodedToken);
+      jest
+        .spyOn(jwtService, 'signAsync')
+        .mockImplementation(async () => 'token');
+      const result = await service.refreshTokens('valid-refresh-token');
+      expect(result).toEqual({
+        accessToken: 'token',
+        refreshToken: 'token',
+        user: { id: 1, email: 'test@test.com' },
+      });
+    });
 
-  it('should return unauthorized message if password is incorrect', async () => {
-    const user = {
-      password: 'wrongpassword',
-      name: 'test',
-      id: 1,
-      email: 'test@test.com',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      enabled: true,
-      isAdmin: false,
-    };
-    jest.spyOn(userService, 'getByEmail').mockImplementation(async () => user);
-    const result = await service.signIn(signInParams);
-
-    expect(result).toEqual({ message: 'Unauthorized' });
+    it('should return invalid refresh token message on invalid token', async () => {
+      jest.spyOn(jwtService, 'verify').mockImplementation(() => {
+        throw new Error('Invalid token');
+      });
+      const result = await service.refreshTokens('invalid-refresh-token');
+      expect(result).toEqual({ message: 'Invalid refresh token' });
+    });
   });
 });

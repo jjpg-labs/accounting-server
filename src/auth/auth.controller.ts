@@ -48,4 +48,19 @@ export class AuthController {
 
     return res.status(HttpStatus.OK).json(user);
   }
+
+  @Post('refresh')
+  async refreshTokens(
+    @Body() refreshTokenDto: { refreshToken: string },
+    @Res() res: Response,
+  ) {
+    const response = await this.authService.refreshTokens(
+      refreshTokenDto.refreshToken,
+    );
+
+    const status =
+      'message' in response ? HttpStatus.UNAUTHORIZED : HttpStatus.OK;
+
+    return res.status(status).json(response);
+  }
 }

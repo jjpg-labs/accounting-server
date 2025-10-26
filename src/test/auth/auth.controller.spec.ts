@@ -100,4 +100,44 @@ describe('AuthController', () => {
       });
     });
   });
+
+  describe('refreshTokens', () => {
+    it('should refresh tokens on valid refresh token', async () => {
+      const result = {
+        accessToken: 'newAccessToken',
+        refreshToken: 'newRefreshToken',
+        user: { id: 1, email: 'test@test.com' },
+      };
+
+      jest
+        .spyOn(authService, 'refreshTokens')
+        .mockImplementation(async () => result);
+
+      await controller.refreshTokens(
+        { refreshToken: 'valid-refresh-token' },
+        mockResponse as Response,
+      );
+
+      expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.OK);
+      expect(mockResponse.json).toHaveBeenCalledWith(result);
+    });
+
+    it('should return INVALID refresh token message on invalid token', async () => {
+      const result = {
+        message: 'Invalid refresh token',
+      };
+
+      jest
+        .spyOn(authService, 'refreshTokens')
+        .mockImplementation(async () => result);
+
+      await controller.refreshTokens(
+        { refreshToken: 'invalid-refresh-token' },
+        mockResponse as Response,
+      );
+
+      expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.UNAUTHORIZED);
+      expect(mockResponse.json).toHaveBeenCalledWith(result);
+    });
+  });
 });

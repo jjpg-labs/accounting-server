@@ -30,4 +30,24 @@ export class AuthService {
       },
     };
   }
+
+  async refreshTokens(refreshToken: string): Promise<SignInResponse> {
+    try {
+      const decoded = this.jwtService.verify(refreshToken);
+      const payload = { sub: decoded.sub, username: decoded.username };
+
+      return {
+        accessToken: await this.jwtService.signAsync(payload),
+        refreshToken: await this.jwtService.signAsync(payload, {
+          expiresIn: '90d',
+        }),
+        user: {
+          id: decoded.sub,
+          email: decoded.username,
+        },
+      };
+    } catch (e) {
+      return { message: 'Invalid refresh token' };
+    }
+  }
 }
