@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from '../../auth/auth.service';
-import { UserService } from '../../user/user.service';
+import { UserService } from '../../users/user.service';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../services/prisma.service';
 import { SignInParams } from 'src/auth/auth.types';

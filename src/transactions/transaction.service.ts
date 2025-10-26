@@ -1,36 +1,72 @@
-import { Injectable } from "@nestjs/common";
-import { PrismaService } from "@/prisma/prisma.service";
-import { Prisma } from "@prisma/client";
+import { Injectable } from '@nestjs/common';
+import { Prisma, Transaction } from '@prisma/client';
+import { PrismaService } from '../services/prisma.service';
 
 @Injectable()
 export class TransactionService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private prisma: PrismaService) { }
 
-  async create(userId: number, data: any) {
-    const tx = await this.prisma.transaction.create({
-      data: {
-        description: data.description,
-        amount: new Prisma.Decimal(data.amount),
-        type: data.type,
-        paymentMethod: data.paymentMethod || "CASH",
-        valueDate: new Date(data.valueDate),
-        accountingBookId: data.accountingBookId,
-        supplierId: data.supplierId,
-        categoryId: data.categoryId,
-      },
-    });
-    return tx;
+  async createTransaction(
+    data: Prisma.TransactionCreateInput,
+  ): Promise<Transaction | null> {
+    try {
+      return await this.prisma.transaction.create({
+        data,
+      });
+    } catch (error) {
+      return null;
+    }
   }
 
-  async findByBookAndRange(accountingBookId: number, from: string, to: string, take = 100, skip = 0) {
-    return this.prisma.transaction.findMany({
-      where: {
-        accountingBookId,
-        valueDate: { gte: new Date(from), lte: new Date(to) },
-      },
-      orderBy: { valueDate: "desc" },
-      take,
-      skip,
-    });
+  async update(
+    id: number,
+    data: Prisma.TransactionUpdateInput,
+  ): Promise<Transaction | null> {
+    try {
+      return await this.prisma.transaction.update({
+        where: {
+          id,
+        },
+        data,
+      });
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async get(id: number): Promise<Transaction | null> {
+    try {
+      return await this.prisma.transaction.findUnique({
+        where: {
+          id,
+        },
+      });
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async getAll(accountingBookId: number): Promise<Transaction[]> {
+    try {
+      return await this.prisma.transaction.findMany({
+        where: {
+          accountingBookId: accountingBookId,
+        },
+      });
+    } catch (error) {
+      return [];
+    }
+  }
+
+  async delete(id: number): Promise<Transaction | null> {
+    try {
+      return await this.prisma.transaction.delete({
+        where: {
+          id,
+        },
+      });
+    } catch (error) {
+      return null;
+    }
   }
 }

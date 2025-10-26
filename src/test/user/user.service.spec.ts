@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../../services/prisma.service';
-import { UserService } from '../../user/user.service';
+import { UserService } from '../../users/user.service';
 import { Prisma, User } from '@prisma/client';
 
 let logSpy: jest.SpyInstance;

@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AccountingBookController } from '../../accountingBook/accountingBook.controller';
-import { AccountingBookService } from '../../accountingBook/accountingBook.service';
+import { AccountingBookController } from '../../accountingBooks/accountingBook.controller';
+import { AccountingBookService } from '../../accountingBooks/accountingBook.service';
 import { Prisma, AccountingBook } from '@prisma/client';
 import { Response } from 'express';
 import { HttpStatus } from '@nestjs/common';
@@ -76,7 +76,9 @@ describe('AccountingBookController', () => {
       await controller.createAccountingBook(data, mockResponse as Response);
 
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Accounting book not created' });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Accounting book not created',
+      });
       expect(service.createAccountingBook).toHaveBeenCalledWith(data);
     });
 
@@ -86,11 +88,15 @@ describe('AccountingBookController', () => {
         user,
       };
 
-      jest.spyOn(service, 'createAccountingBook').mockRejectedValue(new Error());
+      jest
+        .spyOn(service, 'createAccountingBook')
+        .mockRejectedValue(new Error());
       await controller.createAccountingBook(data, mockResponse as Response);
 
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'An error occurred' });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'An error occurred',
+      });
       expect(service.createAccountingBook).toHaveBeenCalledWith(data);
     });
   });
@@ -122,7 +128,9 @@ describe('AccountingBookController', () => {
       await controller.getAccountingBook(id, mockResponse as Response);
 
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.NOT_FOUND);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Accounting book not found' });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Accounting book not found',
+      });
       expect(service.get).toHaveBeenCalledWith(id);
     });
 
@@ -133,15 +141,20 @@ describe('AccountingBookController', () => {
       await controller.getAccountingBook(id, mockResponse as Response);
 
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'An error occurred' });
-      expect(service.get).toHaveBeenCalledWith
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'An error occurred',
+      });
+      expect(service.get).toHaveBeenCalledWith;
     });
   });
 
   describe('updateAccountingBook', () => {
     it('should update an accounting book', async () => {
       const id = 1;
-      const data: Prisma.AccountingBookUncheckedUpdateInput = { id: id, name: 'Test Book' };
+      const data: Prisma.AccountingBookUncheckedUpdateInput = {
+        id: id,
+        name: 'Test Book',
+      };
       const result: AccountingBook = {
         id,
         name: 'Test Book',
@@ -162,33 +175,48 @@ describe('AccountingBookController', () => {
     it('should return BAD_REQUEST status if id is not a number', async () => {
       const data = { id: '1', name: 'Test Book' };
 
-      await controller.updateAccountingBook(data as Prisma.AccountingBookUncheckedUpdateInput, mockResponse as Response);
+      await controller.updateAccountingBook(
+        data as Prisma.AccountingBookUncheckedUpdateInput,
+        mockResponse as Response,
+      );
 
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Accounting book id is required' });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Accounting book id is required',
+      });
     });
 
     it('should return BAD_REQUEST status if update fails', async () => {
       const id = 1;
-      const data: Prisma.AccountingBookUncheckedUpdateInput = { id: 2, name: 'Test Book' };
+      const data: Prisma.AccountingBookUncheckedUpdateInput = {
+        id: 2,
+        name: 'Test Book',
+      };
 
       jest.spyOn(service, 'update').mockResolvedValue(null);
       await controller.updateAccountingBook(data, mockResponse as Response);
 
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Accounting book not updated' });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Accounting book not updated',
+      });
       expect(service.update).toHaveBeenCalledWith(data.id, data);
     });
 
     it('should return BAD_REQUEST status if an error occurs', async () => {
       const id = 1;
-      const data: Prisma.AccountingBookUncheckedUpdateInput = { id, name: 'Test Book' };
+      const data: Prisma.AccountingBookUncheckedUpdateInput = {
+        id,
+        name: 'Test Book',
+      };
 
       jest.spyOn(service, 'update').mockRejectedValue(new Error());
       await controller.updateAccountingBook(data, mockResponse as Response);
 
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'An error occurred' });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'An error occurred',
+      });
       expect(service.update).toHaveBeenCalledWith(id, data);
     });
   });
@@ -220,7 +248,9 @@ describe('AccountingBookController', () => {
       await controller.deleteAccountingBook(id, mockResponse as Response);
 
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Accounting book not deleted' });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Accounting book not deleted',
+      });
       expect(service.delete).toHaveBeenCalledWith(id);
     });
 
@@ -231,7 +261,9 @@ describe('AccountingBookController', () => {
       await controller.deleteAccountingBook(id, mockResponse as Response);
 
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'An error occurred' });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'An error occurred',
+      });
       expect(service.delete).toHaveBeenCalledWith(id);
     });
   });

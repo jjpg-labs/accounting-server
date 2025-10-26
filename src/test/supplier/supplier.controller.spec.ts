@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { SupplierController } from '../../supplier/supplier.controller';
-import { SupplierService } from '../../supplier/supplier.service';
+import { SupplierController } from '../../suppliers/supplier.controller';
+import { SupplierService } from '../../suppliers/supplier.service';
 import { Prisma } from '@prisma/client';
 import { Response } from 'express';
 import { HttpStatus } from '@nestjs/common';
@@ -83,7 +83,9 @@ describe('SupplierController', () => {
       await controller.createSupplier(data, mockResponse as Response);
 
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Unknown error' });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Unknown error',
+      });
     });
 
     it('should return null if creation fails', async () => {
@@ -96,14 +98,19 @@ describe('SupplierController', () => {
       await controller.createSupplier(data, mockResponse as Response);
 
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Supplier not created' });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Supplier not created',
+      });
     });
   });
 
   describe('updateSupplier', () => {
     it('should update a supplier', async () => {
       const id = 1;
-      const data: Prisma.SupplierUncheckedUpdateInput = { id, name: 'Test Supplier' };
+      const data: Prisma.SupplierUncheckedUpdateInput = {
+        id,
+        name: 'Test Supplier',
+      };
       const result = mockSupplierService.update(id, data);
 
       await controller.updateSupplier(data, mockResponse as Response);
@@ -116,32 +123,47 @@ describe('SupplierController', () => {
     it('should return bad request if supplier id is not a number', async () => {
       const data = { id: '1', name: 'Test Supplier' };
 
-      await controller.updateSupplier(data as Prisma.UserUncheckedUpdateInput, mockResponse as Response);
+      await controller.updateSupplier(
+        data as Prisma.UserUncheckedUpdateInput,
+        mockResponse as Response,
+      );
 
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Supplier id is required' });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Supplier id is required',
+      });
     });
 
     it('should return bad request if supplier update fails', async () => {
       const id = 1;
-      const data: Prisma.SupplierUncheckedUpdateInput = { id, name: 'Test Supplier' };
+      const data: Prisma.SupplierUncheckedUpdateInput = {
+        id,
+        name: 'Test Supplier',
+      };
 
       jest.spyOn(service, 'update').mockRejectedValue(new Error());
       await controller.updateSupplier(data, mockResponse as Response);
 
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Unknown error' });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Unknown error',
+      });
     });
 
     it('should return null if update fails', async () => {
       const id = 1;
-      const data: Prisma.SupplierUncheckedUpdateInput = { id, name: 'Test Supplier' };
+      const data: Prisma.SupplierUncheckedUpdateInput = {
+        id,
+        name: 'Test Supplier',
+      };
 
       jest.spyOn(service, 'update').mockResolvedValue(null);
       await controller.updateSupplier(data, mockResponse as Response);
 
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Supplier not updated' });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Supplier not updated',
+      });
     });
   });
 
@@ -164,7 +186,9 @@ describe('SupplierController', () => {
       await controller.getSupplier(id, mockResponse as Response);
 
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.NOT_FOUND);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Supplier not found' });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Supplier not found',
+      });
     });
 
     it('should return bad request if an error occurs', async () => {
@@ -174,7 +198,9 @@ describe('SupplierController', () => {
       await controller.getSupplier(id, mockResponse as Response);
 
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Unknown error' });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Unknown error',
+      });
     });
   });
 
@@ -197,7 +223,9 @@ describe('SupplierController', () => {
       await controller.getSuppliers(userId, mockResponse as Response);
 
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.NOT_FOUND);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Suppliers not found' });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Suppliers not found',
+      });
     });
 
     it('should return bad request if an error occurs', async () => {
@@ -207,7 +235,9 @@ describe('SupplierController', () => {
       await controller.getSuppliers(userId, mockResponse as Response);
 
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Unknown error' });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Unknown error',
+      });
     });
   });
 
@@ -230,7 +260,9 @@ describe('SupplierController', () => {
       await controller.deleteSupplier(id, mockResponse as Response);
 
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.NOT_FOUND);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Supplier not found' });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Supplier not found',
+      });
     });
 
     it('should return bad request if an error occurs', async () => {
@@ -240,7 +272,9 @@ describe('SupplierController', () => {
       await controller.deleteSupplier(id, mockResponse as Response);
 
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
-      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Unknown error' });
+      expect(mockResponse.json).toHaveBeenCalledWith({
+        message: 'Unknown error',
+      });
     });
   });
 });

@@ -24,4 +24,4 @@ export class CreateTransactionDto {
 
   @IsOptional()
   categoryId?: number;
-}
+} 
