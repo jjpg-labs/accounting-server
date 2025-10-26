@@ -4,7 +4,7 @@ import { PrismaService } from '../services/prisma.service';
 
 @Injectable()
 export class AccountingBookService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   async createAccountingBook(
     data: Prisma.AccountingBookCreateInput,

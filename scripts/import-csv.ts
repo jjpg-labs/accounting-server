@@ -1,4 +1,4 @@
-import fs from 'fs';
+/*import fs from 'fs';
 import path from 'path';
 import csvParse from 'csv-parse/lib/sync';
 import { PrismaClient, Prisma } from '@prisma/client';
@@ -158,4 +158,4 @@ main()
     console.error(e);
     process.exit(1);
   })
-  .finally(() => prisma.$disconnect());
+  .finally(() => prisma.$disconnect());*/
