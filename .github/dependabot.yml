@@ -9,6 +9,7 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
+    open-pull-requests-limit: 10 
     groups:
       patch-and-minor-updates:
         update-types:
