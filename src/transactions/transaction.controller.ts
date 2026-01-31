@@ -9,9 +9,9 @@ import {
   Query,
   Res,
 } from '@nestjs/common';
-import { TransactionService } from './transaction.service';
-import { Prisma, Transaction } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { Response } from 'express';
+import { TransactionService } from './transaction.service';
 
 @Controller('transaction')
 export class TransactionController {
@@ -29,7 +29,7 @@ export class TransactionController {
       const status =
         'message' in transaction ? HttpStatus.BAD_REQUEST : HttpStatus.CREATED;
       res.status(status).json(transaction);
-    } catch (error) {
+    } catch {
       res.status(HttpStatus.BAD_REQUEST).json({ message: 'Unknown error' });
     }
   }
@@ -53,7 +53,7 @@ export class TransactionController {
       const status =
         'message' in transaction ? HttpStatus.BAD_REQUEST : HttpStatus.OK;
       res.status(status).json(transaction);
-    } catch (error) {
+    } catch {
       res.status(HttpStatus.BAD_REQUEST).json({ message: 'Unknown error' });
     }
   }
@@ -67,7 +67,7 @@ export class TransactionController {
       const status =
         'message' in transaction ? HttpStatus.NOT_FOUND : HttpStatus.OK;
       res.status(status).json(transaction);
-    } catch (error) {
+    } catch {
       res.status(HttpStatus.BAD_REQUEST).json({ message: 'Unknown error' });
     }
   }
@@ -82,13 +82,32 @@ export class TransactionController {
       const status =
         transactions.length > 0 ? HttpStatus.OK : HttpStatus.NOT_FOUND;
       res.status(status).json(transactions);
-    } catch (error) {
+    } catch {
+      res.status(HttpStatus.BAD_REQUEST).json({ message: 'Unknown error' });
+    }
+  }
+
+  @Get('metrics')
+  async getMetrics(
+    @Query('accountingId') accountingId: number,
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+    @Res() res: Response,
+  ) {
+    try {
+      const metrics = await this.transactionService.getMetrics(
+        accountingId,
+        startDate,
+        endDate,
+      );
+      res.status(HttpStatus.OK).json(metrics);
+    } catch {
       res.status(HttpStatus.BAD_REQUEST).json({ message: 'Unknown error' });
     }
   }
 
   @Delete()
-  async deleteTransaction(@Query() id: number, @Res() res: Response) {
+  async deleteTransaction(@Query('id') id: number, @Res() res: Response) {
     try {
       const transaction = (await this.transactionService.delete(id)) || {
         message: 'Failed to delete transaction',
@@ -96,7 +115,7 @@ export class TransactionController {
       const status =
         'message' in transaction ? HttpStatus.BAD_REQUEST : HttpStatus.OK;
       res.status(status).json(transaction);
-    } catch (error) {
+    } catch {
       res.status(HttpStatus.BAD_REQUEST).json({ message: 'Unknown error' });
     }
   }

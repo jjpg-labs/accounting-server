@@ -13,9 +13,16 @@ export class AccountingBookService {
       return await this.prisma.accountingBook.create({
         data,
       });
-    } catch (error) {
+    } catch {
       return null;
     }
+  }
+
+  async getAll(userId: number): Promise<AccountingBook[]> {
+    return this.prisma.accountingBook.findMany({
+      where: { userId },
+      include: { transactions: true },
+    });
   }
 
   async get(id: number): Promise<AccountingBook | null> {
@@ -25,7 +32,7 @@ export class AccountingBookService {
           id,
         },
       });
-    } catch (error) {
+    } catch {
       return null;
     }
   }
@@ -41,7 +48,7 @@ export class AccountingBookService {
         },
         data,
       });
-    } catch (error) {
+    } catch {
       return null;
     }
   }
@@ -53,7 +60,7 @@ export class AccountingBookService {
           id,
         },
       });
-    } catch (error) {
+    } catch {
       return null;
     }
   }

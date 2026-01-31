@@ -16,7 +16,7 @@ describe('SupplierController', () => {
 
   const mockSupplierService = {
     create: jest.fn((data: Prisma.SupplierCreateInput) => {
-      return { id: Date.now(), ...data };
+      return { id: 1, ...data };
     }),
     update: jest.fn((id: number, data: Prisma.SupplierUpdateInput) => {
       return { id, ...data };

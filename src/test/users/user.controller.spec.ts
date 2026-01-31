@@ -1,9 +1,9 @@
+import { HttpStatus, INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { Prisma } from '@prisma/client';
+import { Response } from 'express';
 import { UserController } from '../../users/user.controller';
 import { UserService } from '../../users/user.service';
-import { Prisma, User } from '@prisma/client';
-import { HttpStatus, INestApplication } from '@nestjs/common';
-import { Response } from 'express';
 
 let logSpy: jest.SpyInstance;
 let errorSpy: jest.SpyInstance;

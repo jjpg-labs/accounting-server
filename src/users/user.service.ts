@@ -15,7 +15,7 @@ export class UserService {
           updatedAt: new Date(),
         },
       });
-    } catch (error) {
+    } catch {
       return null;
     }
   }
@@ -27,7 +27,7 @@ export class UserService {
           id,
         },
       });
-    } catch (error) {
+    } catch {
       return null;
     }
   }
@@ -39,7 +39,7 @@ export class UserService {
           email,
         },
       });
-    } catch (error) {
+    } catch {
       return null;
     }
   }
@@ -47,7 +47,7 @@ export class UserService {
   async getAll(): Promise<User[]> {
     try {
       return await this.prisma.user.findMany();
-    } catch (error) {
+    } catch {
       return [];
     }
   }
@@ -60,7 +60,7 @@ export class UserService {
         },
         data,
       });
-    } catch (error) {
+    } catch {
       return null;
     }
   }
@@ -72,7 +72,7 @@ export class UserService {
           id,
         },
       });
-    } catch (error) {
+    } catch {
       return null;
     }
   }

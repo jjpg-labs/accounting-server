@@ -1,16 +1,15 @@
+import { HttpStatus } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
+import { Response } from 'express';
 import { AuthController } from '../../auth/auth.controller';
 import { AuthService } from '../../auth/auth.service';
-import { UserService } from '../../users/user.service';
-import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../services/prisma.service';
-import { Response } from 'express';
-import { HttpStatus } from '@nestjs/common';
+import { UserService } from '../../users/user.service';
 
 describe('AuthController', () => {
   let controller: AuthController;
   let authService: AuthService;
-  let prismaService: PrismaService;
   let mockResponse: Partial<Response>;
 
   beforeEach(async () => {
@@ -21,7 +20,6 @@ describe('AuthController', () => {
 
     controller = module.get<AuthController>(AuthController);
     authService = module.get<AuthService>(AuthService);
-    prismaService = module.get<PrismaService>(PrismaService);
     mockResponse = {
       status: jest.fn().mockReturnThis(),
       json: jest.fn().mockReturnThis(),
@@ -75,10 +73,7 @@ describe('AuthController', () => {
       };
       const req = { user: mockUser };
 
-      const result = controller.getProfile(
-        req as any,
-        mockResponse as Response,
-      );
+      controller.getProfile(req as any, mockResponse as Response);
 
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.OK);
       expect(mockResponse.json).toHaveBeenCalledWith({

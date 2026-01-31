@@ -1,9 +1,9 @@
+import { HttpStatus } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { AccountingBook, Prisma } from '@prisma/client';
+import { Response } from 'express';
 import { AccountingBookController } from '../../accountingBooks/accountingBook.controller';
 import { AccountingBookService } from '../../accountingBooks/accountingBook.service';
-import { Prisma, AccountingBook } from '@prisma/client';
-import { Response } from 'express';
-import { HttpStatus } from '@nestjs/common';
 
 describe('AccountingBookController', () => {
   let controller: AccountingBookController;
@@ -26,6 +26,7 @@ describe('AccountingBookController', () => {
             get: jest.fn().mockResolvedValue({ id: 1, name: 'Test Book' }),
             update: jest.fn().mockResolvedValue({ id: 1, name: 'Test Book' }),
             delete: jest.fn().mockResolvedValue({ id: 1, name: 'Test Book' }),
+            getAll: jest.fn().mockResolvedValue([{ id: 1, name: 'Test Book' }]),
           },
         },
       ],
@@ -144,7 +145,26 @@ describe('AccountingBookController', () => {
       expect(mockResponse.json).toHaveBeenCalledWith({
         message: 'An error occurred',
       });
-      expect(service.get).toHaveBeenCalledWith;
+      expect(service.get).toHaveBeenCalledWith(id);
+    });
+  });
+
+  describe('getAccountingBooks', () => {
+    it('should return all accounting books for a user', async () => {
+      const userId = 1;
+      const books = [{ id: 1, name: 'Test Book' }];
+      jest.spyOn(service, 'getAll').mockResolvedValue(books as any);
+
+      await controller.getAccountingBooks(userId, mockResponse as Response);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.OK);
+      expect(mockResponse.json).toHaveBeenCalledWith(books);
+    });
+
+    it('should return BAD_REQUEST on failure', async () => {
+      jest.spyOn(service, 'getAll').mockRejectedValue(new Error());
+      await controller.getAccountingBooks(1, mockResponse as Response);
+      expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
     });
   });
 
@@ -187,7 +207,6 @@ describe('AccountingBookController', () => {
     });
 
     it('should return BAD_REQUEST status if update fails', async () => {
-      const id = 1;
       const data: Prisma.AccountingBookUncheckedUpdateInput = {
         id: 2,
         name: 'Test Book',

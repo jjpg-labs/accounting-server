@@ -1,17 +1,17 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../services/prisma.service';
 import { Prisma, Supplier } from '@prisma/client';
+import { PrismaService } from '../services/prisma.service';
 
 @Injectable()
 export class SupplierService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   async create(data: Prisma.SupplierCreateInput): Promise<Supplier> {
     try {
       return await this.prisma.supplier.create({
         data,
       });
-    } catch (error) {
+    } catch {
       return null;
     }
   }
@@ -27,7 +27,7 @@ export class SupplierService {
         },
         data,
       });
-    } catch (error) {
+    } catch {
       return null;
     }
   }
@@ -39,7 +39,7 @@ export class SupplierService {
           id,
         },
       });
-    } catch (error) {
+    } catch {
       return null;
     }
   }
@@ -49,7 +49,7 @@ export class SupplierService {
       return await this.prisma.supplier.findMany({
         where: { userId },
       });
-    } catch (error) {
+    } catch {
       return [];
     }
   }
@@ -59,7 +59,7 @@ export class SupplierService {
       return await this.prisma.supplier.delete({
         where: { id },
       });
-    } catch (error) {
+    } catch {
       return null;
     }
   }

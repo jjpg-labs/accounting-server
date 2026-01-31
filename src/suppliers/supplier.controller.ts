@@ -9,9 +9,9 @@ import {
   Query,
   Res,
 } from '@nestjs/common';
-import { SupplierService } from './supplier.service';
 import { Prisma } from '@prisma/client';
 import { Response } from 'express';
+import { SupplierService } from './supplier.service';
 
 @Controller('supplier')
 export class SupplierController {
@@ -29,7 +29,7 @@ export class SupplierController {
       const status =
         'message' in newSupplier ? HttpStatus.BAD_REQUEST : HttpStatus.CREATED;
       res.status(status).json(newSupplier);
-    } catch (error) {
+    } catch {
       res.status(HttpStatus.BAD_REQUEST).json({ message: 'Unknown error' });
     }
   }
@@ -52,7 +52,7 @@ export class SupplierController {
       const status =
         'message' in supplier ? HttpStatus.BAD_REQUEST : HttpStatus.OK;
       res.status(status).json(supplier);
-    } catch (error) {
+    } catch {
       res.status(HttpStatus.BAD_REQUEST).json({ message: 'Unknown error' });
     }
   }
@@ -66,7 +66,7 @@ export class SupplierController {
       const status =
         'message' in supplier ? HttpStatus.NOT_FOUND : HttpStatus.OK;
       res.status(status).json(supplier);
-    } catch (error) {
+    } catch {
       res.status(HttpStatus.BAD_REQUEST).json({ message: 'Unknown error' });
     }
   }
@@ -80,13 +80,13 @@ export class SupplierController {
       const status =
         'message' in suppliers ? HttpStatus.NOT_FOUND : HttpStatus.OK;
       res.status(status).json(suppliers);
-    } catch (error) {
+    } catch {
       res.status(HttpStatus.BAD_REQUEST).json({ message: 'Unknown error' });
     }
   }
 
   @Delete()
-  async deleteSupplier(@Query() id: number, @Res() res: Response) {
+  async deleteSupplier(@Query('id') id: number, @Res() res: Response) {
     try {
       const supplier = (await this.supplierService.delete(id)) || {
         message: 'Supplier not found',
@@ -94,7 +94,7 @@ export class SupplierController {
       const status =
         'message' in supplier ? HttpStatus.NOT_FOUND : HttpStatus.OK;
       res.status(status).json(supplier);
-    } catch (error) {
+    } catch {
       res.status(HttpStatus.BAD_REQUEST).json({ message: 'Unknown error' });
     }
   }

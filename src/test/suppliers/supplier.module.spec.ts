@@ -2,16 +2,16 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { SupplierService } from '../../suppliers/supplier.service';
 import { SupplierController } from '../../suppliers/supplier.controller';
 import { PrismaService } from '../../services/prisma.service';
-import { TransactionModule } from '../../suppliers/supplier.module';
+import { SupplierModule } from '../../suppliers/supplier.module';
 
-describe('TransactionModule', () => {
+describe('SupplierModule', () => {
   let supplierService: SupplierService;
   let prismaService: PrismaService;
   let supplierController: SupplierController;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [TransactionModule],
+      imports: [SupplierModule],
     }).compile();
 
     supplierService = module.get<SupplierService>(SupplierService);

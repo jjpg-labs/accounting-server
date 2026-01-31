@@ -5,11 +5,11 @@ import {
   SetMetadata,
   UnauthorizedException,
 } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
-import { jwtConstants } from './constants';
-import { Reflector } from '@nestjs/core';
 import { AccessToken } from './auth.types';
+import { jwtConstants } from './constants';
 
 export const IS_PUBLIC_KEY = 'isPublic';
 export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
@@ -44,7 +44,7 @@ export class AuthGuard implements CanActivate {
       });
 
       request.user = payload;
-    } catch (error) {
+    } catch {
       throw new UnauthorizedException();
     }
 

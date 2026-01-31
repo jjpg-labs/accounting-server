@@ -9,9 +9,9 @@ import {
   Query,
   Res,
 } from '@nestjs/common';
-import { AccountingBookService } from './accountingBook.service';
-import { AccountingBook, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import { Response } from 'express';
+import { AccountingBookService } from './accountingBook.service';
 
 @Controller('book')
 export class AccountingBookController {
@@ -33,8 +33,22 @@ export class AccountingBookController {
           ? HttpStatus.BAD_REQUEST
           : HttpStatus.CREATED;
       res.status(status).json(newAccountingBook);
-    } catch (error) {
+    } catch {
       res.status(HttpStatus.BAD_REQUEST).json({ message: 'An error occurred' });
+    }
+  }
+  @Get('all')
+  async getAccountingBooks(
+    @Query('userId') userId: number,
+    @Res() res: Response,
+  ) {
+    try {
+      const books = await this.accountingBookService.getAll(userId);
+      res.status(HttpStatus.OK).json(books);
+    } catch {
+      res
+        .status(HttpStatus.BAD_REQUEST)
+        .json({ message: 'Failed to fetch accounting books' });
     }
   }
 
@@ -48,7 +62,7 @@ export class AccountingBookController {
         'message' in accountigBook ? HttpStatus.NOT_FOUND : HttpStatus.OK;
 
       res.status(status).json(accountigBook);
-    } catch (error) {
+    } catch {
       res.status(HttpStatus.BAD_REQUEST).json({ message: 'An error occurred' });
     }
   }
@@ -73,7 +87,7 @@ export class AccountingBookController {
       res
         .status(status)
         .json(accountingBook || { message: 'Accounting book not updated' });
-    } catch (error) {
+    } catch {
       res.status(HttpStatus.BAD_REQUEST).json({ message: 'An error occurred' });
     }
   }
@@ -86,7 +100,7 @@ export class AccountingBookController {
       res
         .status(status)
         .json(accountingBook || { message: 'Accounting book not deleted' });
-    } catch (error) {
+    } catch {
       res.status(HttpStatus.BAD_REQUEST).json({ message: 'An error occurred' });
     }
   }

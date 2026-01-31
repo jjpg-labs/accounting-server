@@ -176,4 +176,20 @@ describe('AccountingBookService', () => {
       expect(await service.delete(id)).toBeNull();
     });
   });
+
+  describe('getAll', () => {
+    it('should return all accounting books for a user', async () => {
+      const userId = 1;
+      const books = [{ id: 1, name: 'Test Book', userId }];
+      jest
+        .spyOn(prisma.accountingBook, 'findMany')
+        .mockResolvedValue(books as any);
+
+      expect(await service.getAll(userId)).toEqual(books);
+      expect(prisma.accountingBook.findMany).toHaveBeenCalledWith({
+        where: { userId },
+        include: { transactions: true },
+      });
+    });
+  });
 });

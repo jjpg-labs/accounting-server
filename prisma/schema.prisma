@@ -7,69 +7,61 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum TransactionType {
-  INCOME
-  EXPENSE
-}
-
-enum PaymentMethod {
-  CASH
-  CARD
-  TRANSFER
-  OTHER
-}
-
 model User {
-  id              Int              @id @default(autoincrement())
-  email           String           @unique
-  name            String
-  password        String
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  enabled         Boolean          @default(true)
-  isAdmin         Boolean          @default(false)
-  refreshTokens   RefreshToken[]
-  accountingBooks AccountingBook[]
-  suppliers       Supplier[]
+  id                    Int                    @id @default(autoincrement())
+  email                 String                 @unique
+  name                  String
+  password              String
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  enabled               Boolean                @default(true)
+  isAdmin               Boolean                @default(false)
+  accountingBooks       AccountingBook[]
+  budgets               Budget[]
+  recurringTransactions RecurringTransaction[]
+  refreshTokens         RefreshToken[]
+  suppliers             Supplier[]
 }
 
 model RefreshToken {
   id        Int      @id @default(autoincrement())
   token     String   @unique
   userId    Int
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   revoked   Boolean  @default(false)
   createdAt DateTime @default(now())
   expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId], map: "RefreshToken_userId_idx")
+  @@index([userId])
 }
 
 model AccountingBook {
-  id           Int           @id @default(autoincrement())
-  name         String
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  userId       Int
-  isBusiness   Boolean       @default(false)
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  transactions Transaction[]
-  categories   Category[]
-  dailyReports DailyReport[]
+  id                    Int                    @id @default(autoincrement())
+  name                  String
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  userId                Int
+  isBusiness            Boolean                @default(false)
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  categories            Category[]
+  dailyReports          DailyReport[]
+  recurringTransactions RecurringTransaction[]
+  transactions          Transaction[]
 
-  @@index([userId], map: "AccountingBook_userId_idx")
   @@unique([userId, name], map: "AccountingBook_userId_name_unique")
+  @@index([userId])
 }
 
 model Category {
-  id             Int           @id @default(autoincrement())
-  name           String
-  accountingBook AccountingBook @relation(fields: [accountingBookId], references: [id], onDelete: Cascade)
-  accountingBookId Int
-  transactions   Transaction[]
-
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  id                    Int                    @id @default(autoincrement())
+  name                  String
+  accountingBookId      Int
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  budgets               Budget[]
+  accountingBook        AccountingBook         @relation(fields: [accountingBookId], references: [id], onDelete: Cascade)
+  recurringTransactions RecurringTransaction[]
+  transactions          Transaction[]
 
   @@unique([accountingBookId, name], map: "Category_bookId_name_unique")
 }
@@ -83,59 +75,110 @@ model Supplier {
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
 
-  @@index([userId], map: "Supplier_userId_idx")
   @@unique([userId, name], map: "Supplier_userId_name_unique")
+  @@index([userId])
 }
 
 model Transaction {
-  id               Int            @id @default(autoincrement())
+  id               Int             @id @default(autoincrement())
   description      String?
-  amount           Decimal        @db.Decimal(14, 2)
+  amount           Decimal         @db.Decimal(14, 2)
   type             TransactionType
-  paymentMethod    PaymentMethod  @default(CASH)
+  paymentMethod    PaymentMethod   @default(CASH)
   valueDate        DateTime
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
   accountingBookId Int
-  accountingBook   AccountingBook @relation(fields: [accountingBookId], references: [id], onDelete: Cascade)
-
   supplierId       Int?
-  supplier         Supplier?      @relation(fields: [supplierId], references: [id], onDelete: SetNull)
-
   categoryId       Int?
-  category         Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-
   dailyReportId    Int?
-  dailyReport      DailyReport?   @relation(fields: [dailyReportId], references: [id], onDelete: SetNull)
+  accountingBook   AccountingBook  @relation(fields: [accountingBookId], references: [id], onDelete: Cascade)
+  category         Category?       @relation(fields: [categoryId], references: [id])
+  dailyReport      DailyReport?    @relation(fields: [dailyReportId], references: [id])
+  supplier         Supplier?       @relation(fields: [supplierId], references: [id])
 
-  @@index([accountingBookId], map: "Transaction_accountingBookId_idx")
-  @@index([supplierId], map: "Transaction_supplierId_idx")
-  @@index([valueDate], map: "Transaction_valueDate_idx")
+  @@index([accountingBookId])
+  @@index([supplierId])
+  @@index([valueDate])
   @@index([accountingBookId, valueDate], map: "tx_book_date_idx")
 }
 
 model DailyReport {
-  id                Int           @id @default(autoincrement())
-  date              DateTime      // fecha del día (ej. 2025-10-26T00:00:00Z)
-  accountingBookId  Int
-  accountingBook    AccountingBook @relation(fields: [accountingBookId], references: [id], onDelete: Cascade)
+  id               Int            @id @default(autoincrement())
+  date             DateTime
+  accountingBookId Int
+  openingBalance   Decimal        @db.Decimal(14, 2)
+  totalIncome      Decimal        @default(0.00) @db.Decimal(14, 2)
+  totalExpense     Decimal        @default(0.00) @db.Decimal(14, 2)
+  closingBalance   Decimal        @db.Decimal(14, 2)
+  cashLeftForNext  Decimal        @db.Decimal(14, 2)
+  removedFromCash  Decimal        @db.Decimal(14, 2)
+  reconciled       Boolean        @default(false)
+  notes            String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  accountingBook   AccountingBook @relation(fields: [accountingBookId], references: [id], onDelete: Cascade)
+  transactions     Transaction[]
 
-  openingBalance    Decimal       @db.Decimal(14, 2)
-  totalIncome       Decimal       @db.Decimal(14, 2) @default("0.00")
-  totalExpense      Decimal       @db.Decimal(14, 2) @default("0.00")
-  closingBalance    Decimal       @db.Decimal(14, 2)
-  cashLeftForNext   Decimal       @db.Decimal(14, 2)
-  removedFromCash   Decimal       @db.Decimal(14, 2)
-
-  reconciled        Boolean       @default(false)
-  notes             String?
-
-  transactions      Transaction[]
-
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
-
-  @@index([accountingBookId], map: "DailyReport_accountingBookId_idx")
   @@unique([accountingBookId, date], map: "DailyReport_book_date_unique")
+  @@index([accountingBookId])
+}
+
+model Budget {
+  id         Int       @id @default(autoincrement())
+  name       String
+  amount     Decimal   @db.Decimal(14, 2)
+  startDate  DateTime
+  endDate    DateTime?
+  userId     Int
+  categoryId Int?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  category   Category? @relation(fields: [categoryId], references: [id])
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model RecurringTransaction {
+  id               Int             @id @default(autoincrement())
+  description      String?
+  amount           Decimal         @db.Decimal(14, 2)
+  type             TransactionType
+  paymentMethod    PaymentMethod   @default(CASH)
+  frequency        Frequency
+  startDate        DateTime
+  nextRunDate      DateTime
+  lastRunDate      DateTime?
+  active           Boolean         @default(true)
+  userId           Int
+  accountingBookId Int
+  categoryId       Int?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  accountingBook   AccountingBook  @relation(fields: [accountingBookId], references: [id], onDelete: Cascade)
+  category         Category?       @relation(fields: [categoryId], references: [id])
+  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([nextRunDate])
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  TRANSFER
+  OTHER
+}
+
+enum Frequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
 }

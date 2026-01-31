@@ -1,12 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { Prisma, Transaction } from '@prisma/client';
 import { PrismaService } from '../../services/prisma.service';
 import { TransactionService } from '../../transactions/transaction.service';
-import { Prisma, Transaction } from '@prisma/client';
 
 describe('TransactionService', () => {
   let service: TransactionService;
   let prismaService: PrismaService;
   let consoleLogSpy: jest.SpyInstance;
+  let consoleErrorSpy: jest.SpyInstance;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -16,10 +17,12 @@ describe('TransactionService', () => {
     service = module.get<TransactionService>(TransactionService);
     prismaService = module.get<PrismaService>(PrismaService);
     consoleLogSpy = jest.spyOn(console, 'log').mockImplementation();
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
   });
 
   afterEach(() => {
     consoleLogSpy.mockRestore();
+    consoleErrorSpy.mockRestore();
   });
 
   describe('update', () => {
@@ -302,6 +305,89 @@ describe('TransactionService', () => {
         .mockRejectedValue(new Error());
 
       expect(await service.delete(id)).toBeNull();
+    });
+  });
+
+  describe('getMetrics', () => {
+    it('should return metrics for an accounting book', async () => {
+      const accountingBookId = 1;
+      const metrics = [
+        { type: 'INCOME', _sum: { amount: new Prisma.Decimal(1000) } },
+        { type: 'EXPENSE', _sum: { amount: new Prisma.Decimal(400) } },
+      ];
+
+      jest
+        .spyOn(prismaService.transaction as any, 'groupBy')
+        .mockResolvedValue(metrics as any);
+
+      const result = await service.getMetrics(accountingBookId);
+      expect(result).toEqual({
+        totalIncome: 1000,
+        totalExpense: 400,
+        netRevenue: 600,
+      });
+    });
+
+    it('should handle date filters', async () => {
+      const accountingBookId = 1;
+      const startDate = '2023-01-01';
+      const endDate = '2023-12-31';
+
+      jest
+        .spyOn(prismaService.transaction as any, 'groupBy')
+        .mockResolvedValue([]);
+
+      await service.getMetrics(accountingBookId, startDate, endDate);
+      expect(prismaService.transaction.groupBy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            valueDate: {
+              gte: new Date(startDate),
+              lte: new Date(endDate),
+            },
+          }),
+        }),
+      );
+    });
+
+    it('should return zeros on error', async () => {
+      jest
+        .spyOn(prismaService.transaction as any, 'groupBy')
+        .mockRejectedValue(new Error());
+      const result = await service.getMetrics(1);
+      expect(result).toEqual({
+        totalIncome: 0,
+        totalExpense: 0,
+        netRevenue: 0,
+      });
+    });
+
+    it('should handle mixed income and expense and zeros', async () => {
+      const metrics = [
+        { type: 'INCOME', _sum: { amount: null } },
+        { type: 'EXPENSE', _sum: { amount: new Prisma.Decimal(100) } },
+        { type: 'OTHER', _sum: { amount: new Prisma.Decimal(50) } },
+      ];
+      (
+        jest.spyOn(prismaService.transaction as any, 'groupBy') as any
+      ).mockResolvedValue(metrics as any);
+
+      const result = await service.getMetrics(1);
+      expect(result).toEqual({
+        totalIncome: 0,
+        totalExpense: 100,
+        netRevenue: -100,
+      });
+    });
+
+    it('should handle EXPENSE amount null', async () => {
+      const metrics = [{ type: 'EXPENSE', _sum: { amount: null } }];
+      (
+        jest.spyOn(prismaService.transaction as any, 'groupBy') as any
+      ).mockResolvedValue(metrics as any);
+
+      const result = await service.getMetrics(1);
+      expect(result.totalExpense).toBe(0);
     });
   });
 });

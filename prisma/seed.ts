@@ -1,4 +1,5 @@
 import { PrismaClient, Prisma } from '@prisma/client';
+import { DataFactory } from './factory';
 
 const prisma = new PrismaClient();
 
@@ -43,6 +44,45 @@ async function main() {
       create: { accountingBookId: book.id, name },
       update: { name },
     });
+  }
+
+  const factory = new DataFactory(prisma);
+
+  // Suppliers
+  const suppliersList = ['Office Depot', 'Amazon AWS', 'Google Cloud', 'Local Landlord', 'Utility Co.'];
+  const suppliers = [];
+  for (const sName of suppliersList) {
+    suppliers.push(await factory.createSupplier(user.id, sName));
+  }
+
+  // Transactions
+  const allCategories = await prisma.category.findMany({ where: { accountingBookId: book.id } });
+
+  if (allCategories.length > 0) {
+    const today = new Date();
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(today.getDate() - 30);
+
+    // Create 50 transactions
+    for (let i = 0; i < 50; i++) {
+      const isIncome = Math.random() > 0.7; // 30% income, 70% expense
+      const type = isIncome ? 'INCOME' : 'EXPENSE';
+      const amount = factory.randomAmount(10, 500);
+      const date = factory.randomDate(thirtyDaysAgo, today);
+
+      const category = allCategories[Math.floor(Math.random() * allCategories.length)];
+      const supplier = !isIncome ? suppliers[Math.floor(Math.random() * suppliers.length)] : null;
+
+      await factory.createTransaction(
+        book.id,
+        category.id,
+        supplier ? supplier.id : null,
+        type,
+        amount,
+        date
+      );
+    }
+    console.log('Created 50 random transactions');
   }
 
   console.log('Seed completado. User:', user.email, 'BookId:', book.id);

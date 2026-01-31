@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { PrismaService } from '../services/prisma.service';
 import { UserService } from '../users/user.service';
 import { SignInParams, SignInResponse } from './auth.types';
-import { PrismaService } from '../services/prisma.service';
 
 interface JwtPayload {
   sub: number;
@@ -83,7 +83,7 @@ export class AuthService {
           email: decoded.username,
         },
       };
-    } catch (e) {
+    } catch {
       return { message: 'Invalid refresh token' };
     }
   }

@@ -9,10 +9,10 @@ import {
   Query,
   Res,
 } from '@nestjs/common';
-import { UserService } from './user.service';
 import { Prisma, User } from '@prisma/client';
 import { Response } from 'express';
 import { Public } from '../auth/auth.guard';
+import { UserService } from './user.service';
 
 @Controller('user')
 export class UserController {
@@ -25,7 +25,7 @@ export class UserController {
       const user = await this.userService.createUser(data);
       const status = user ? HttpStatus.CREATED : HttpStatus.BAD_REQUEST;
       res.status(status).json(user || { message: 'Could not create user' });
-    } catch (error) {
+    } catch {
       res.status(HttpStatus.BAD_REQUEST).json({ message: 'Unknown error' });
     }
   }
@@ -55,7 +55,7 @@ export class UserController {
       }
 
       res.status(status).json(user);
-    } catch (error) {
+    } catch {
       res.status(HttpStatus.BAD_REQUEST).json({ message: 'Unknown error' });
     }
   }
@@ -75,7 +75,7 @@ export class UserController {
       };
       const status = 'message' in user ? HttpStatus.BAD_REQUEST : HttpStatus.OK;
       res.status(status).json(user);
-    } catch (error) {
+    } catch {
       res.status(HttpStatus.BAD_REQUEST).json({ message: 'Unknown error' });
     }
   }
@@ -86,7 +86,7 @@ export class UserController {
       const users = await this.userService.getAll();
       const status = users.length ? HttpStatus.OK : HttpStatus.NO_CONTENT;
       res.status(status).json(users);
-    } catch (error) {
+    } catch {
       res.status(HttpStatus.BAD_REQUEST).json({ message: 'Unknown error' });
     }
   }
@@ -103,7 +103,7 @@ export class UserController {
       };
       const status = 'message' in user ? HttpStatus.BAD_REQUEST : HttpStatus.OK;
       res.status(status).json(user);
-    } catch (error) {
+    } catch {
       res.status(HttpStatus.BAD_REQUEST).json({ message: 'Unknown error' });
     }
   }

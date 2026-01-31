@@ -1,9 +1,9 @@
+import { HttpStatus } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { TransactionController } from '../../transactions/transaction.controller';
-import { TransactionService } from '../../transactions/transaction.service';
 import { Prisma, Transaction } from '@prisma/client';
 import { Response } from 'express';
-import { HttpStatus } from '@nestjs/common';
+import { TransactionController } from '../../transactions/transaction.controller';
+import { TransactionService } from '../../transactions/transaction.service';
 
 describe('TransactionController', () => {
   let controller: TransactionController;
@@ -20,12 +20,13 @@ describe('TransactionController', () => {
     get: jest.fn((id: number) => {
       return { id, amount: 100, name: 'Test transaction' };
     }),
-    getAll: jest.fn((accountingId: number) => {
+    getAll: jest.fn((_accountingId: number) => {
       return [{ id: 1, amount: 100, name: 'Test transaction' }];
     }),
     delete: jest.fn((id: number) => {
       return { id, amount: 100, name: 'Test transaction' };
     }),
+    getMetrics: jest.fn(),
   };
 
   const accountingBook: Prisma.AccountingBookCreateNestedOneWithoutTransactionsInput =
@@ -345,6 +346,35 @@ describe('TransactionController', () => {
       expect(mockResponse.json).toHaveBeenCalledWith({
         message: 'Unknown error',
       });
+    });
+  });
+
+  describe('getMetrics', () => {
+    it('should get metrics', async () => {
+      const accountingId = 1;
+      const metrics = { totalIncome: 1000, totalExpense: 400, netRevenue: 600 };
+      (service.getMetrics as jest.Mock).mockResolvedValue(metrics);
+
+      await controller.getMetrics(
+        accountingId,
+        '2023-01-01',
+        '2023-01-31',
+        mockResponse as Response,
+      );
+
+      expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.OK);
+      expect(mockResponse.json).toHaveBeenCalledWith(metrics);
+    });
+
+    it('should return bad request on failure', async () => {
+      (service.getMetrics as jest.Mock).mockRejectedValue(new Error());
+      await controller.getMetrics(
+        1,
+        '2023-01-01',
+        '2023-01-31',
+        mockResponse as Response,
+      );
+      expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
     });
   });
 });

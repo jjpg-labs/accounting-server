@@ -75,4 +75,34 @@ export class DailyReportsService {
 
     return upsert;
   }
+  async getReport(accountingBookId: number, date: string) {
+    const d = new Date(date);
+    return this.prisma.dailyReport.findUnique({
+      where: {
+        accountingBookId_date: {
+          accountingBookId,
+          date: d,
+        },
+      },
+    });
+  }
+
+  async getReports(
+    accountingBookId: number,
+    startDate: string,
+    endDate: string,
+  ) {
+    return this.prisma.dailyReport.findMany({
+      where: {
+        accountingBookId,
+        date: {
+          gte: new Date(startDate),
+          lte: new Date(endDate),
+        },
+      },
+      orderBy: {
+        date: 'asc',
+      },
+    });
+  }
 }

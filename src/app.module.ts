@@ -8,6 +8,13 @@ import { AccountingBookModule } from './accountingBooks/accountingBook.module';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from './auth/auth.guard';
 import { TransactionModule } from './transactions/transaction.module';
+import { ScheduleModule } from '@nestjs/schedule';
+import { BudgetsModule } from './budgets/budgets.module';
+import { PeriodicModule } from './periodic/periodic.module';
+import { CategoriesModule } from './categories/categories.module';
+import { DailyReportsModule } from './dailyReports/dailyReports.module';
+import { SupplierModule } from './suppliers/supplier.module';
+import { UserModule } from './users/user.module';
 
 @Module({
   imports: [
@@ -17,6 +24,13 @@ import { TransactionModule } from './transactions/transaction.module';
     AuthModule,
     AccountingBookModule,
     TransactionModule,
+    ScheduleModule.forRoot(),
+    BudgetsModule,
+    PeriodicModule,
+    CategoriesModule,
+    DailyReportsModule,
+    SupplierModule,
+    UserModule,
   ],
   controllers: [AppController],
   providers: [
