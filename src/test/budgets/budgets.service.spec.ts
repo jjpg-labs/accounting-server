@@ -11,12 +11,14 @@ describe('BudgetsService', () => {
       findMany: jest.fn(),
       findUnique: jest.fn(),
       findFirst: jest.fn(),
+      update: jest.fn(),
       delete: jest.fn(),
       deleteMany: jest.fn(),
     },
   };
 
   beforeEach(async () => {
+    jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         BudgetsService,
@@ -57,6 +59,27 @@ describe('BudgetsService', () => {
     it('should return null if not found', async () => {
       mockPrismaService.budget.findFirst.mockResolvedValue(null);
       expect(await service.findOne(1, 1)).toBeNull();
+    });
+  });
+
+  describe('update', () => {
+    it('should update and return the budget', async () => {
+      const existing = { id: 1, userId: 1, name: 'Old' };
+      const updated = { id: 1, userId: 1, name: 'New', category: null };
+      mockPrismaService.budget.findFirst.mockResolvedValue(existing);
+      mockPrismaService.budget.update.mockResolvedValue(updated);
+      expect(await service.update(1, 1, { name: 'New' })).toEqual(updated);
+      expect(mockPrismaService.budget.update).toHaveBeenCalledWith({
+        where: { id: 1 },
+        data: { name: 'New' },
+        include: { category: true },
+      });
+    });
+
+    it('should return null if the budget does not belong to the user', async () => {
+      mockPrismaService.budget.findFirst.mockResolvedValue(null);
+      expect(await service.update(1, 999, { name: 'New' })).toBeNull();
+      expect(mockPrismaService.budget.update).not.toHaveBeenCalled();
     });
   });
 

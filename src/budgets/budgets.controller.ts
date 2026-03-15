@@ -2,14 +2,19 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Body,
   Param,
   Delete,
   Request,
   UseGuards,
+  HttpCode,
+  HttpStatus,
+  NotFoundException,
 } from '@nestjs/common';
 import { BudgetsService } from './budgets.service';
 import { CreateBudgetDto } from './dto/create-budget.dto';
+import { UpdateBudgetDto } from './dto/update-budget.dto';
 import { AuthGuard } from '../auth/auth.guard';
 
 @Controller('budgets')
@@ -30,6 +35,18 @@ export class BudgetsController {
   @Get(':id')
   findOne(@Request() req, @Param('id') id: number) {
     return this.budgetsService.findOne(id, req.user.sub);
+  }
+
+  @Put(':id')
+  @HttpCode(HttpStatus.OK)
+  async update(
+    @Request() req,
+    @Param('id') id: number,
+    @Body() updateBudgetDto: UpdateBudgetDto,
+  ) {
+    const result = await this.budgetsService.update(id, req.user.sub, updateBudgetDto);
+    if (!result) throw new NotFoundException('Budget not found');
+    return result;
   }
 
   @Delete(':id')
