@@ -4,6 +4,8 @@ import { Response } from 'express';
 import { DailyReportsController } from '../../dailyReports/dailyReports.controller';
 import { DailyReportsService } from '../../dailyReports/dailyReports.service';
 
+const USER_ID = 1;
+
 describe('DailyReportsController', () => {
   let controller: DailyReportsController;
 
@@ -17,7 +19,12 @@ describe('DailyReportsController', () => {
     json: jest.fn().mockReturnThis(),
   };
 
+  const mockRequest = { user: { sub: USER_ID } };
+
   beforeEach(async () => {
+    jest.clearAllMocks();
+    mockResponse.status.mockReturnThis();
+    mockResponse.json.mockReturnThis();
     const module: TestingModule = await Test.createTestingModule({
       controllers: [DailyReportsController],
       providers: [
@@ -41,6 +48,7 @@ describe('DailyReportsController', () => {
         '',
         '2023-01-01',
         '2023-01-02',
+        mockRequest as any,
         mockResponse as any as Response,
       );
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.OK);
@@ -55,6 +63,7 @@ describe('DailyReportsController', () => {
         '2023-01-01',
         '',
         '',
+        mockRequest as any,
         mockResponse as any as Response,
       );
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.OK);
@@ -68,6 +77,7 @@ describe('DailyReportsController', () => {
         '2023-01-01',
         '',
         '',
+        mockRequest as any,
         mockResponse as any as Response,
       );
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.NOT_FOUND);
@@ -79,6 +89,7 @@ describe('DailyReportsController', () => {
         '',
         '',
         '',
+        mockRequest as any,
         mockResponse as any as Response,
       );
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
@@ -91,6 +102,7 @@ describe('DailyReportsController', () => {
         '',
         '2023-01-01',
         '2023-01-02',
+        mockRequest as any,
         mockResponse as any as Response,
       );
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);

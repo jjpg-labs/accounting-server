@@ -1,22 +1,42 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../../services/prisma.service';
 import { AccountingBookService } from '../../accountingBooks/accountingBook.service';
-import { Prisma, AccountingBook } from '@prisma/client';
+
+const USER_ID = 1;
+
+const makeBook = (overrides = {}) => ({
+  id: 1,
+  name: 'Test Book',
+  userId: USER_ID,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  isBusiness: false,
+  ...overrides,
+});
 
 describe('AccountingBookService', () => {
   let service: AccountingBookService;
-  let prisma: PrismaService;
-  const user: Prisma.UserCreateNestedOneWithoutAccountingBooksInput = {
-    connect: { id: 1 },
+
+  const mockPrismaService = {
+    accountingBook: {
+      create: jest.fn(),
+      findMany: jest.fn(),
+      findFirst: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    },
   };
 
   beforeEach(async () => {
+    jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
-      providers: [AccountingBookService, PrismaService],
+      providers: [
+        AccountingBookService,
+        { provide: PrismaService, useValue: mockPrismaService },
+      ],
     }).compile();
 
     service = module.get<AccountingBookService>(AccountingBookService);
-    prisma = module.get<PrismaService>(PrismaService);
   });
 
   it('should be defined', () => {
@@ -25,171 +45,88 @@ describe('AccountingBookService', () => {
 
   describe('createAccountingBook', () => {
     it('should create a new accounting book', async () => {
-      const data: Prisma.AccountingBookCreateInput = {
-        name: 'Test Book',
-        user,
-      };
-      const result: AccountingBook = {
-        id: 1,
-        name: 'Test Book',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        userId: 1,
-        isBusiness: false,
-      };
-
-      jest.spyOn(prisma.accountingBook, 'create').mockResolvedValue(result);
-
-      expect(await service.createAccountingBook(data)).toEqual(result);
+      const book = makeBook();
+      mockPrismaService.accountingBook.create.mockResolvedValue(book);
+      expect(
+        await service.createAccountingBook({ name: 'Test Book', userId: USER_ID }),
+      ).toEqual(book);
     });
 
     it('should return null if an error occurs', async () => {
-      const data: Prisma.AccountingBookCreateInput = {
-        name: 'Test Book',
-        user,
-      };
-
-      jest.spyOn(prisma.accountingBook, 'create').mockImplementation(() => {
-        throw new Error();
-      });
-
-      expect(await service.createAccountingBook(data)).toBeNull();
-    });
-  });
-
-  describe('get', () => {
-    it('should return an accounting book by id', async () => {
-      const id = 1;
-      const result: AccountingBook = {
-        id: 1,
-        name: 'Test Book',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        userId: 1,
-        isBusiness: false,
-      };
-
-      jest.spyOn(prisma.accountingBook, 'findUnique').mockResolvedValue(result);
-
-      expect(await service.get(id)).toEqual(result);
-    });
-
-    it('should return null if accounting book not found', async () => {
-      const id = 1;
-
-      jest.spyOn(prisma.accountingBook, 'findUnique').mockResolvedValue(null);
-
-      expect(await service.get(id)).toBeNull();
-    });
-
-    it('should return null if an error occurs', async () => {
-      const id = 1;
-
-      jest.spyOn(prisma.accountingBook, 'findUnique').mockImplementation(() => {
-        throw new Error();
-      });
-
-      expect(await service.get(id)).toBeNull();
-    });
-  });
-
-  describe('update', () => {
-    it('should update an accounting book', async () => {
-      const id = 1;
-      const data: Prisma.AccountingBookCreateInput = {
-        name: 'Test Book',
-        user,
-      };
-      const result: AccountingBook = {
-        id: 1,
-        name: 'Test Book',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        userId: 1,
-        isBusiness: false,
-      };
-
-      jest.spyOn(prisma.accountingBook, 'update').mockResolvedValue(result);
-
-      expect(await service.update(id, data)).toEqual(result);
-    });
-
-    it('should return null if accounting book not found', async () => {
-      const id = 1;
-      const data: Prisma.AccountingBookCreateInput = {
-        name: 'Test Book',
-        user,
-      };
-
-      jest.spyOn(prisma.accountingBook, 'update').mockResolvedValue(null);
-
-      expect(await service.update(id, data)).toBeNull();
-    });
-
-    it('should return null if an error occurs', async () => {
-      const id = 1;
-      const data: Prisma.AccountingBookCreateInput = {
-        name: 'Test Book',
-        user,
-      };
-
-      jest.spyOn(prisma.accountingBook, 'update').mockImplementation(() => {
-        throw new Error();
-      });
-
-      expect(await service.update(id, data)).toBeNull();
-    });
-  });
-
-  describe('delete', () => {
-    it('should delete an accounting book', async () => {
-      const id = 1;
-      const result: AccountingBook = {
-        id: 1,
-        name: 'Test Book',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        userId: 1,
-        isBusiness: false,
-      };
-
-      jest.spyOn(prisma.accountingBook, 'delete').mockResolvedValue(result);
-
-      expect(await service.delete(id)).toEqual(result);
-    });
-
-    it('should return null if accounting book not found', async () => {
-      const id = 1;
-
-      jest.spyOn(prisma.accountingBook, 'delete').mockResolvedValue(null);
-
-      expect(await service.delete(id)).toBeNull();
-    });
-
-    it('should return null if an error occurs', async () => {
-      const id = 1;
-
-      jest.spyOn(prisma.accountingBook, 'delete').mockImplementation(() => {
-        throw new Error();
-      });
-
-      expect(await service.delete(id)).toBeNull();
+      mockPrismaService.accountingBook.create.mockRejectedValue(new Error());
+      expect(
+        await service.createAccountingBook({ name: 'Test Book', userId: USER_ID }),
+      ).toBeNull();
     });
   });
 
   describe('getAll', () => {
     it('should return all accounting books for a user', async () => {
-      const userId = 1;
-      const books = [{ id: 1, name: 'Test Book', userId }];
-      jest
-        .spyOn(prisma.accountingBook, 'findMany')
-        .mockResolvedValue(books as any);
+      const books = [makeBook()];
+      mockPrismaService.accountingBook.findMany.mockResolvedValue(books);
+      expect(await service.getAll(USER_ID)).toEqual(books);
+      expect(mockPrismaService.accountingBook.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { userId: USER_ID } }),
+      );
+    });
+  });
 
-      expect(await service.getAll(userId)).toEqual(books);
-      expect(prisma.accountingBook.findMany).toHaveBeenCalledWith({
-        where: { userId },
-        include: { transactions: true },
+  describe('get', () => {
+    it('should return an accounting book by id and userId', async () => {
+      const book = makeBook();
+      mockPrismaService.accountingBook.findFirst.mockResolvedValue(book);
+      expect(await service.get(1, USER_ID)).toEqual(book);
+      expect(mockPrismaService.accountingBook.findFirst).toHaveBeenCalledWith({
+        where: { id: 1, userId: USER_ID },
       });
+    });
+
+    it('should return null if not found', async () => {
+      mockPrismaService.accountingBook.findFirst.mockResolvedValue(null);
+      expect(await service.get(99, USER_ID)).toBeNull();
+    });
+
+    it('should return null if an error occurs', async () => {
+      mockPrismaService.accountingBook.findFirst.mockRejectedValue(new Error());
+      expect(await service.get(1, USER_ID)).toBeNull();
+    });
+  });
+
+  describe('update', () => {
+    it('should update if owned by user', async () => {
+      const book = makeBook();
+      mockPrismaService.accountingBook.findFirst.mockResolvedValue({ id: 1 });
+      mockPrismaService.accountingBook.update.mockResolvedValue(book);
+      expect(await service.update(1, { name: 'New Name' }, USER_ID)).toEqual(book);
+    });
+
+    it('should return null if not owned', async () => {
+      mockPrismaService.accountingBook.findFirst.mockResolvedValue(null);
+      expect(await service.update(1, { name: 'New Name' }, USER_ID)).toBeNull();
+    });
+
+    it('should return null if an error occurs', async () => {
+      mockPrismaService.accountingBook.findFirst.mockRejectedValue(new Error());
+      expect(await service.update(1, { name: 'New Name' }, USER_ID)).toBeNull();
+    });
+  });
+
+  describe('delete', () => {
+    it('should delete if owned by user', async () => {
+      const book = makeBook();
+      mockPrismaService.accountingBook.findFirst.mockResolvedValue({ id: 1 });
+      mockPrismaService.accountingBook.delete.mockResolvedValue(book);
+      expect(await service.delete(1, USER_ID)).toEqual(book);
+    });
+
+    it('should return null if not owned', async () => {
+      mockPrismaService.accountingBook.findFirst.mockResolvedValue(null);
+      expect(await service.delete(1, USER_ID)).toBeNull();
+    });
+
+    it('should return null if an error occurs', async () => {
+      mockPrismaService.accountingBook.findFirst.mockRejectedValue(new Error());
+      expect(await service.delete(1, USER_ID)).toBeNull();
     });
   });
 });

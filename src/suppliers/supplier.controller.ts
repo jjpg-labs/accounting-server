@@ -7,10 +7,11 @@ import {
   Post,
   Put,
   Query,
+  Req,
   Res,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { SupplierService } from './supplier.service';
 
 @Controller('supplier')
@@ -19,13 +20,15 @@ export class SupplierController {
 
   @Post()
   async createSupplier(
-    @Body() data: Prisma.SupplierCreateInput,
+    @Body() data: Prisma.SupplierUncheckedCreateInput,
+    @Req() req: Request,
     @Res() res: Response,
   ) {
     try {
-      const newSupplier = (await this.supplierService.create(data)) || {
-        message: 'Supplier not created',
-      };
+      const newSupplier =
+        (await this.supplierService.create(req.user.sub, data)) || {
+          message: 'Supplier not created',
+        };
       const status =
         'message' in newSupplier ? HttpStatus.BAD_REQUEST : HttpStatus.CREATED;
       res.status(status).json(newSupplier);
@@ -37,6 +40,7 @@ export class SupplierController {
   @Put()
   async updateSupplier(
     @Body() data: Prisma.SupplierUncheckedUpdateInput,
+    @Req() req: Request,
     @Res() res: Response,
   ) {
     if (typeof data.id !== 'number') {
@@ -46,9 +50,10 @@ export class SupplierController {
     }
 
     try {
-      const supplier = (await this.supplierService.update(data.id, data)) || {
-        message: 'Supplier not updated',
-      };
+      const supplier =
+        (await this.supplierService.update(data.id, data, req.user.sub)) || {
+          message: 'Supplier not updated',
+        };
       const status =
         'message' in supplier ? HttpStatus.BAD_REQUEST : HttpStatus.OK;
       res.status(status).json(supplier);
@@ -58,11 +63,16 @@ export class SupplierController {
   }
 
   @Get()
-  async getSupplier(@Query('id') id: number, @Res() res: Response) {
+  async getSupplier(
+    @Query('id') id: number,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
     try {
-      const supplier = (await this.supplierService.get(id)) || {
-        message: 'Supplier not found',
-      };
+      const supplier =
+        (await this.supplierService.get(id, req.user.sub)) || {
+          message: 'Supplier not found',
+        };
       const status =
         'message' in supplier ? HttpStatus.NOT_FOUND : HttpStatus.OK;
       res.status(status).json(supplier);
@@ -72,11 +82,12 @@ export class SupplierController {
   }
 
   @Get('all')
-  async getSuppliers(@Query('userId') userId: number, @Res() res: Response) {
+  async getSuppliers(@Req() req: Request, @Res() res: Response) {
     try {
-      const suppliers = (await this.supplierService.getAll(userId)) || {
-        message: 'Suppliers not found',
-      };
+      const suppliers =
+        (await this.supplierService.getAll(req.user.sub)) || {
+          message: 'Suppliers not found',
+        };
       const status =
         'message' in suppliers ? HttpStatus.NOT_FOUND : HttpStatus.OK;
       res.status(status).json(suppliers);
@@ -86,11 +97,16 @@ export class SupplierController {
   }
 
   @Delete()
-  async deleteSupplier(@Query('id') id: number, @Res() res: Response) {
+  async deleteSupplier(
+    @Query('id') id: number,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
     try {
-      const supplier = (await this.supplierService.delete(id)) || {
-        message: 'Supplier not found',
-      };
+      const supplier =
+        (await this.supplierService.delete(id, req.user.sub)) || {
+          message: 'Supplier not found',
+        };
       const status =
         'message' in supplier ? HttpStatus.NOT_FOUND : HttpStatus.OK;
       res.status(status).json(supplier);

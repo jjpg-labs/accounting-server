@@ -7,12 +7,17 @@ export class TransactionService {
   constructor(private prisma: PrismaService) {}
 
   async createTransaction(
-    data: Prisma.TransactionCreateInput,
+    data: Prisma.TransactionUncheckedCreateInput,
+    userId: number,
   ): Promise<Transaction | null> {
     try {
-      return await this.prisma.transaction.create({
-        data,
+      const book = await this.prisma.accountingBook.findFirst({
+        where: { id: data.accountingBookId, userId },
+        select: { id: true },
       });
+      if (!book) return null;
+
+      return await this.prisma.transaction.create({ data });
     } catch (error) {
       console.log(error);
       return null;
@@ -21,38 +26,39 @@ export class TransactionService {
 
   async update(
     id: number,
-    data: Prisma.TransactionUpdateInput,
+    data: Prisma.TransactionUncheckedUpdateInput,
+    userId: number,
   ): Promise<Transaction | null> {
     try {
-      return await this.prisma.transaction.update({
-        where: {
-          id,
-        },
-        data,
+      const existing = await this.prisma.transaction.findFirst({
+        where: { id, accountingBook: { userId } },
+        select: { id: true },
       });
+      if (!existing) return null;
+
+      return await this.prisma.transaction.update({ where: { id }, data });
     } catch {
       return null;
     }
   }
 
-  async get(id: number): Promise<Transaction | null> {
+  async get(id: number, userId: number): Promise<Transaction | null> {
     try {
-      return await this.prisma.transaction.findUnique({
-        where: {
-          id,
-        },
+      return await this.prisma.transaction.findFirst({
+        where: { id, accountingBook: { userId } },
       });
     } catch {
       return null;
     }
   }
 
-  async getAll(accountingBookId: number): Promise<Transaction[]> {
+  async getAll(
+    accountingBookId: number,
+    userId: number,
+  ): Promise<Transaction[]> {
     try {
       return await this.prisma.transaction.findMany({
-        where: {
-          accountingBookId: accountingBookId,
-        },
+        where: { accountingBookId, accountingBook: { userId } },
       });
     } catch {
       return [];
@@ -61,12 +67,14 @@ export class TransactionService {
 
   async getMetrics(
     accountingBookId: number,
+    userId: number,
     startDate?: string,
     endDate?: string,
   ) {
     try {
       const where: Prisma.TransactionWhereInput = {
         accountingBookId,
+        accountingBook: { userId },
       };
 
       if (startDate || endDate) {
@@ -110,13 +118,15 @@ export class TransactionService {
     }
   }
 
-  async delete(id: number): Promise<Transaction | null> {
+  async delete(id: number, userId: number): Promise<Transaction | null> {
     try {
-      return await this.prisma.transaction.delete({
-        where: {
-          id,
-        },
+      const existing = await this.prisma.transaction.findFirst({
+        where: { id, accountingBook: { userId } },
+        select: { id: true },
       });
+      if (!existing) return null;
+
+      return await this.prisma.transaction.delete({ where: { id } });
     } catch {
       return null;
     }

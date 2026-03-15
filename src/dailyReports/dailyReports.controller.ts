@@ -1,5 +1,5 @@
-import { Controller, Get, HttpStatus, Query, Res } from '@nestjs/common';
-import { Response } from 'express';
+import { Controller, Get, HttpStatus, Query, Req, Res } from '@nestjs/common';
+import { Request, Response } from 'express';
 import { DailyReportsService } from './dailyReports.service';
 
 @Controller('daily-reports')
@@ -12,20 +12,24 @@ export class DailyReportsController {
     @Query('date') date: string,
     @Query('startDate') startDate: string,
     @Query('endDate') endDate: string,
+    @Req() req: Request,
     @Res() res: Response,
   ) {
     try {
+      const userId = req.user.sub;
       if (startDate && endDate) {
         const reports = await this.dailyReportsService.getReports(
           accountingBookId,
           startDate,
           endDate,
+          userId,
         );
         return res.status(HttpStatus.OK).json(reports);
       } else if (date) {
         const report = await this.dailyReportsService.getReport(
           accountingBookId,
           date,
+          userId,
         );
         if (!report) {
           return res

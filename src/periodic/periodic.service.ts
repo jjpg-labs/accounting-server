@@ -11,6 +11,12 @@ export class PeriodicService {
   constructor(private prisma: PrismaService) {}
 
   async create(userId: number, dto: CreateRecurringDto) {
+    const book = await this.prisma.accountingBook.findFirst({
+      where: { id: dto.accountingBookId, userId },
+      select: { id: true },
+    });
+    if (!book) return null;
+
     return this.prisma.recurringTransaction.create({
       data: {
         ...dto,

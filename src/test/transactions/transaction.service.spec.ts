@@ -3,6 +3,24 @@ import { Prisma, Transaction } from '@prisma/client';
 import { PrismaService } from '../../services/prisma.service';
 import { TransactionService } from '../../transactions/transaction.service';
 
+const USER_ID = 1;
+
+const makeTransaction = (overrides: Partial<Transaction> = {}): Transaction => ({
+  id: 1,
+  amount: new Prisma.Decimal(100),
+  accountingBookId: 1,
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  type: 'INCOME',
+  supplierId: null,
+  description: 'Test',
+  paymentMethod: null,
+  categoryId: null,
+  dailyReportId: null,
+  valueDate: new Date(),
+  ...overrides,
+});
+
 describe('TransactionService', () => {
   let service: TransactionService;
   let prismaService: PrismaService;
@@ -25,302 +43,185 @@ describe('TransactionService', () => {
     consoleErrorSpy.mockRestore();
   });
 
-  describe('update', () => {
-    it('should update a transaction', async () => {
-      const id = 1;
-      const valueDate = new Date();
-      const data: Prisma.TransactionUncheckedUpdateInput = {
-        id,
-        amount: new Prisma.Decimal(100),
-        valueDate,
-      };
-      const updatedTransaction: Transaction = {
-        id,
-        amount: new Prisma.Decimal(100),
-        accountingBookId: 1,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        type: 'INCOME',
-        supplierId: null,
-        description: 'Test',
-        paymentMethod: null,
-        categoryId: null,
-        dailyReportId: null,
-        valueDate,
-      };
-
-      jest
-        .spyOn(prismaService.transaction, 'update')
-        .mockResolvedValue(updatedTransaction);
-
-      expect(await service.update(id, data)).toEqual(updatedTransaction);
-    });
-
-    it('should return null if transaction does not exist', async () => {
-      const id = 1;
-      const data: Prisma.TransactionUncheckedUpdateInput = {
-        id,
-        amount: new Prisma.Decimal(100),
-        valueDate: new Date(),
-      };
-
-      jest.spyOn(prismaService.transaction, 'update').mockResolvedValue(null);
-
-      await expect(service.update(id, data)).resolves.toBeNull();
-    });
-
-    it('should return null if transaction update fails', async () => {
-      const id = 1;
-      const data: Prisma.TransactionUncheckedUpdateInput = {
-        id,
-        amount: new Prisma.Decimal(100),
-        valueDate: new Date(),
-      };
-
-      jest
-        .spyOn(prismaService.transaction, 'update')
-        .mockRejectedValue(new Error());
-
-      expect(await service.update(id, data)).toBeNull();
-    });
-  });
-
   describe('createTransaction', () => {
-    const accountingBook: Prisma.AccountingBookCreateNestedOneWithoutTransactionsInput =
-      {
-        create: {
-          name: 'Test',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          userId: 1,
-        },
-      };
+    const data: Prisma.TransactionUncheckedCreateInput = {
+      amount: new Prisma.Decimal(100),
+      accountingBookId: 1,
+      type: 'INCOME',
+      description: 'Test',
+      valueDate: new Date(),
+    };
 
-    it('should create a new transaction', async () => {
-      const valueDate = new Date();
-      const data: Prisma.TransactionCreateInput = {
-        amount: new Prisma.Decimal(100),
-        accountingBook,
-        type: 'INCOME',
-        description: 'Test',
-        valueDate,
-      };
-      const createdTransaction: Transaction = {
-        id: 1,
-        amount: new Prisma.Decimal(100),
-        accountingBookId: 1,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        type: 'INCOME',
-        supplierId: null,
-        description: 'Test',
-        paymentMethod: null,
-        categoryId: null,
-        dailyReportId: null,
-        valueDate,
-      };
-
+    it('should create a new transaction when book belongs to user', async () => {
+      const expected = makeTransaction();
+      jest
+        .spyOn(prismaService.accountingBook, 'findFirst')
+        .mockResolvedValue({ id: 1 } as any);
       jest
         .spyOn(prismaService.transaction, 'create')
-        .mockResolvedValue(createdTransaction);
+        .mockResolvedValue(expected);
 
-      expect(await service.createTransaction(data)).toEqual(createdTransaction);
+      expect(await service.createTransaction(data, USER_ID)).toEqual(expected);
     });
 
-    it('should return null if transaction creation fails', async () => {
-      const data: Prisma.TransactionCreateInput = {
-        amount: new Prisma.Decimal(100),
-        accountingBook,
-        type: 'INCOME',
-        description: 'Test',
-        valueDate: new Date(),
-      };
+    it('should return null when accounting book does not belong to user', async () => {
+      jest
+        .spyOn(prismaService.accountingBook, 'findFirst')
+        .mockResolvedValue(null);
 
-      jest.spyOn(prismaService.transaction, 'create').mockResolvedValue(null);
-
-      await expect(service.createTransaction(data)).resolves.toBeNull();
+      expect(await service.createTransaction(data, USER_ID)).toBeNull();
     });
 
     it('should return null if an error occurs', async () => {
-      const data: Prisma.TransactionCreateInput = {
-        amount: new Prisma.Decimal(100),
-        accountingBook,
-        type: 'INCOME',
-        description: 'Test',
-        valueDate: new Date(),
-      };
-
+      jest
+        .spyOn(prismaService.accountingBook, 'findFirst')
+        .mockResolvedValue({ id: 1 } as any);
       jest
         .spyOn(prismaService.transaction, 'create')
         .mockRejectedValue(new Error());
 
-      expect(await service.createTransaction(data)).toBeNull();
+      expect(await service.createTransaction(data, USER_ID)).toBeNull();
+    });
+  });
+
+  describe('update', () => {
+    const data: Prisma.TransactionUncheckedUpdateInput = {
+      id: 1,
+      amount: new Prisma.Decimal(100),
+      valueDate: new Date(),
+    };
+
+    it('should update a transaction when it belongs to user', async () => {
+      const updated = makeTransaction();
+      jest
+        .spyOn(prismaService.transaction, 'findFirst')
+        .mockResolvedValue({ id: 1 } as any);
+      jest
+        .spyOn(prismaService.transaction, 'update')
+        .mockResolvedValue(updated);
+
+      expect(await service.update(1, data, USER_ID)).toEqual(updated);
+    });
+
+    it('should return null when transaction does not belong to user', async () => {
+      jest
+        .spyOn(prismaService.transaction, 'findFirst')
+        .mockResolvedValue(null);
+
+      expect(await service.update(1, data, USER_ID)).toBeNull();
+    });
+
+    it('should return null if transaction update fails', async () => {
+      jest
+        .spyOn(prismaService.transaction, 'findFirst')
+        .mockResolvedValue({ id: 1 } as any);
+      jest
+        .spyOn(prismaService.transaction, 'update')
+        .mockRejectedValue(new Error());
+
+      expect(await service.update(1, data, USER_ID)).toBeNull();
     });
   });
 
   describe('get', () => {
-    it('should return a transaction by id', async () => {
-      const id = 1;
-      const transaction: Transaction = {
-        id,
-        amount: new Prisma.Decimal(100),
-        accountingBookId: 1,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        type: 'INCOME',
-        supplierId: null,
-        description: 'Test',
-        paymentMethod: null,
-        categoryId: null,
-        dailyReportId: null,
-        valueDate: new Date(),
-      };
-
+    it('should return a transaction belonging to user', async () => {
+      const transaction = makeTransaction();
       jest
-        .spyOn(prismaService.transaction, 'findUnique')
+        .spyOn(prismaService.transaction, 'findFirst')
         .mockResolvedValue(transaction);
 
-      expect(await service.get(id)).toEqual(transaction);
+      expect(await service.get(1, USER_ID)).toEqual(transaction);
     });
 
-    it('should return null if transaction does not exist', async () => {
-      const id = 1;
-
+    it('should return null when transaction does not belong to user', async () => {
       jest
-        .spyOn(prismaService.transaction, 'findUnique')
+        .spyOn(prismaService.transaction, 'findFirst')
         .mockResolvedValue(null);
 
-      expect(await service.get(id)).toBeNull();
+      expect(await service.get(1, USER_ID)).toBeNull();
     });
 
     it('should return null if an error occurs', async () => {
-      const id = 1;
-
       jest
-        .spyOn(prismaService.transaction, 'findUnique')
+        .spyOn(prismaService.transaction, 'findFirst')
         .mockRejectedValue(new Error());
 
-      expect(await service.get(id)).toBeNull();
+      expect(await service.get(1, USER_ID)).toBeNull();
     });
   });
 
   describe('getAll', () => {
-    it('should return all transactions for a given accountingBookId', async () => {
-      const accountingBookId = 1;
+    it('should return all transactions for a given accountingBookId belonging to user', async () => {
       const transactions: Transaction[] = [
-        {
-          id: 1,
-          amount: new Prisma.Decimal(100),
-          accountingBookId,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          type: 'INCOME',
-          supplierId: null,
-          description: 'Test',
-          paymentMethod: null,
-          categoryId: null,
-          dailyReportId: null,
-          valueDate: new Date(),
-        },
-        {
-          id: 2,
-          amount: new Prisma.Decimal(200),
-          accountingBookId,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          type: 'EXPENSE',
-          supplierId: null,
-          description: 'Test 2',
-          paymentMethod: null,
-          categoryId: null,
-          dailyReportId: null,
-          valueDate: new Date(),
-        },
+        makeTransaction({ id: 1 }),
+        makeTransaction({ id: 2, amount: new Prisma.Decimal(200), type: 'EXPENSE' }),
       ];
-
       jest
         .spyOn(prismaService.transaction, 'findMany')
         .mockResolvedValue(transactions);
 
-      expect(await service.getAll(accountingBookId)).toEqual(transactions);
+      expect(await service.getAll(1, USER_ID)).toEqual(transactions);
     });
 
-    it('should return an empty array if no transactions exist for the given accountingBookId', async () => {
-      const accountingBookId = 1;
-
+    it('should return an empty array if no transactions match', async () => {
       jest.spyOn(prismaService.transaction, 'findMany').mockResolvedValue([]);
 
-      expect(await service.getAll(accountingBookId)).toEqual([]);
+      expect(await service.getAll(1, USER_ID)).toEqual([]);
     });
 
     it('should return an empty array if an error occurs', async () => {
-      const accountingBookId = 1;
-
       jest
         .spyOn(prismaService.transaction, 'findMany')
         .mockRejectedValue(new Error());
 
-      expect(await service.getAll(accountingBookId)).toEqual([]);
+      expect(await service.getAll(1, USER_ID)).toEqual([]);
     });
   });
 
   describe('delete', () => {
-    it('should delete a transaction by id', async () => {
-      const id = 1;
-      const deletedTransaction: Transaction = {
-        id,
-        amount: new Prisma.Decimal(100),
-        accountingBookId: 1,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        type: 'INCOME',
-        supplierId: null,
-        description: 'Test',
-        paymentMethod: null,
-        categoryId: null,
-        dailyReportId: null,
-        valueDate: new Date(),
-      };
-
+    it('should delete a transaction belonging to user', async () => {
+      const deleted = makeTransaction();
+      jest
+        .spyOn(prismaService.transaction, 'findFirst')
+        .mockResolvedValue({ id: 1 } as any);
       jest
         .spyOn(prismaService.transaction, 'delete')
-        .mockResolvedValue(deletedTransaction);
+        .mockResolvedValue(deleted);
 
-      expect(await service.delete(id)).toEqual(deletedTransaction);
+      expect(await service.delete(1, USER_ID)).toEqual(deleted);
     });
 
-    it('should return null if transaction does not exist', async () => {
-      const id = 1;
+    it('should return null when transaction does not belong to user', async () => {
+      jest
+        .spyOn(prismaService.transaction, 'findFirst')
+        .mockResolvedValue(null);
 
-      jest.spyOn(prismaService.transaction, 'delete').mockResolvedValue(null);
-
-      await expect(service.delete(id)).resolves.toBeNull();
+      expect(await service.delete(1, USER_ID)).toBeNull();
     });
 
     it('should return null if transaction deletion fails', async () => {
-      const id = 1;
-
+      jest
+        .spyOn(prismaService.transaction, 'findFirst')
+        .mockResolvedValue({ id: 1 } as any);
       jest
         .spyOn(prismaService.transaction, 'delete')
         .mockRejectedValue(new Error());
 
-      expect(await service.delete(id)).toBeNull();
+      expect(await service.delete(1, USER_ID)).toBeNull();
     });
   });
 
   describe('getMetrics', () => {
-    it('should return metrics for an accounting book', async () => {
-      const accountingBookId = 1;
+    it('should return metrics for an accounting book belonging to user', async () => {
       const metrics = [
         { type: 'INCOME', _sum: { amount: new Prisma.Decimal(1000) } },
         { type: 'EXPENSE', _sum: { amount: new Prisma.Decimal(400) } },
       ];
-
       jest
         .spyOn(prismaService.transaction as any, 'groupBy')
         .mockResolvedValue(metrics as any);
 
-      const result = await service.getMetrics(accountingBookId);
+      const result = await service.getMetrics(1, USER_ID);
       expect(result).toEqual({
         totalIncome: 1000,
         totalExpense: 400,
@@ -329,15 +230,13 @@ describe('TransactionService', () => {
     });
 
     it('should handle date filters', async () => {
-      const accountingBookId = 1;
       const startDate = '2023-01-01';
       const endDate = '2023-12-31';
-
       jest
         .spyOn(prismaService.transaction as any, 'groupBy')
         .mockResolvedValue([]);
 
-      await service.getMetrics(accountingBookId, startDate, endDate);
+      await service.getMetrics(1, USER_ID, startDate, endDate);
       expect(prismaService.transaction.groupBy).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({
@@ -354,12 +253,9 @@ describe('TransactionService', () => {
       jest
         .spyOn(prismaService.transaction as any, 'groupBy')
         .mockRejectedValue(new Error());
-      const result = await service.getMetrics(1);
-      expect(result).toEqual({
-        totalIncome: 0,
-        totalExpense: 0,
-        netRevenue: 0,
-      });
+
+      const result = await service.getMetrics(1, USER_ID);
+      expect(result).toEqual({ totalIncome: 0, totalExpense: 0, netRevenue: 0 });
     });
 
     it('should handle mixed income and expense and zeros', async () => {
@@ -372,7 +268,7 @@ describe('TransactionService', () => {
         jest.spyOn(prismaService.transaction as any, 'groupBy') as any
       ).mockResolvedValue(metrics as any);
 
-      const result = await service.getMetrics(1);
+      const result = await service.getMetrics(1, USER_ID);
       expect(result).toEqual({
         totalIncome: 0,
         totalExpense: 100,
@@ -386,7 +282,7 @@ describe('TransactionService', () => {
         jest.spyOn(prismaService.transaction as any, 'groupBy') as any
       ).mockResolvedValue(metrics as any);
 
-      const result = await service.getMetrics(1);
+      const result = await service.getMetrics(1, USER_ID);
       expect(result.totalExpense).toBe(0);
     });
   });

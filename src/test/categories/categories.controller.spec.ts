@@ -4,6 +4,8 @@ import { Response } from 'express';
 import { CategoriesController } from '../../categories/categories.controller';
 import { CategoriesService } from '../../categories/categories.service';
 
+const USER_ID = 1;
+
 describe('CategoriesController', () => {
   let controller: CategoriesController;
 
@@ -20,7 +22,12 @@ describe('CategoriesController', () => {
     json: jest.fn().mockReturnThis(),
   };
 
+  const mockRequest = { user: { sub: USER_ID } };
+
   beforeEach(async () => {
+    jest.clearAllMocks();
+    mockResponse.status.mockReturnThis();
+    mockResponse.json.mockReturnThis();
     const module: TestingModule = await Test.createTestingModule({
       controllers: [CategoriesController],
       providers: [
@@ -39,14 +46,20 @@ describe('CategoriesController', () => {
     it('should create a category', async () => {
       const dto = { name: 'Test', accountingBookId: 1 };
       mockCategoriesService.create.mockResolvedValue(dto);
-      await controller.create(dto, mockResponse as any as Response);
+      await controller.create(dto, mockRequest as any, mockResponse as any as Response);
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.CREATED);
       expect(mockResponse.json).toHaveBeenCalledWith(dto);
     });
 
+    it('should return bad request if create returns null', async () => {
+      mockCategoriesService.create.mockResolvedValue(null);
+      await controller.create({} as any, mockRequest as any, mockResponse as any as Response);
+      expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
+    });
+
     it('should return bad request on error', async () => {
       mockCategoriesService.create.mockRejectedValue(new Error());
-      await controller.create({} as any, mockResponse as any as Response);
+      await controller.create({} as any, mockRequest as any, mockResponse as any as Response);
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
     });
   });
@@ -55,14 +68,14 @@ describe('CategoriesController', () => {
     it('should return categories', async () => {
       const result = [{ id: 1, name: 'Test' }];
       mockCategoriesService.findAll.mockResolvedValue(result);
-      await controller.findAll(1, mockResponse as any as Response);
+      await controller.findAll(1, mockRequest as any, mockResponse as any as Response);
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.OK);
       expect(mockResponse.json).toHaveBeenCalledWith(result);
     });
 
     it('should return bad request on error', async () => {
       mockCategoriesService.findAll.mockRejectedValue(new Error());
-      await controller.findAll(1, mockResponse as any as Response);
+      await controller.findAll(1, mockRequest as any, mockResponse as any as Response);
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
     });
   });
@@ -71,20 +84,20 @@ describe('CategoriesController', () => {
     it('should return a category', async () => {
       const result = { id: 1, name: 'Test' };
       mockCategoriesService.findOne.mockResolvedValue(result);
-      await controller.findOne(1, mockResponse as any as Response);
+      await controller.findOne(1, mockRequest as any, mockResponse as any as Response);
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.OK);
       expect(mockResponse.json).toHaveBeenCalledWith(result);
     });
 
     it('should return not found if category does not exist', async () => {
       mockCategoriesService.findOne.mockResolvedValue(null);
-      await controller.findOne(1, mockResponse as any as Response);
+      await controller.findOne(1, mockRequest as any, mockResponse as any as Response);
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.NOT_FOUND);
     });
 
     it('should return bad request on error', async () => {
       mockCategoriesService.findOne.mockRejectedValue(new Error());
-      await controller.findOne(1, mockResponse as any as Response);
+      await controller.findOne(1, mockRequest as any, mockResponse as any as Response);
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
     });
   });
@@ -96,15 +109,22 @@ describe('CategoriesController', () => {
       await controller.update(
         1,
         { name: 'Updated' },
+        mockRequest as any,
         mockResponse as any as Response,
       );
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.OK);
       expect(mockResponse.json).toHaveBeenCalledWith(result);
     });
 
+    it('should return bad request if update returns null', async () => {
+      mockCategoriesService.update.mockResolvedValue(null);
+      await controller.update(1, {}, mockRequest as any, mockResponse as any as Response);
+      expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
+    });
+
     it('should return bad request on error', async () => {
       mockCategoriesService.update.mockRejectedValue(new Error());
-      await controller.update(1, {}, mockResponse as any as Response);
+      await controller.update(1, {}, mockRequest as any, mockResponse as any as Response);
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
     });
   });
@@ -112,16 +132,20 @@ describe('CategoriesController', () => {
   describe('remove', () => {
     it('should delete a category', async () => {
       mockCategoriesService.remove.mockResolvedValue({ id: 1 });
-      await controller.remove(1, mockResponse as any as Response);
+      await controller.remove(1, mockRequest as any, mockResponse as any as Response);
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.OK);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        message: 'Category deleted',
-      });
+      expect(mockResponse.json).toHaveBeenCalledWith({ message: 'Category deleted' });
+    });
+
+    it('should return not found if category does not exist', async () => {
+      mockCategoriesService.remove.mockResolvedValue(null);
+      await controller.remove(1, mockRequest as any, mockResponse as any as Response);
+      expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.NOT_FOUND);
     });
 
     it('should return bad request on error', async () => {
       mockCategoriesService.remove.mockRejectedValue(new Error());
-      await controller.remove(1, mockResponse as any as Response);
+      await controller.remove(1, mockRequest as any, mockResponse as any as Response);
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
     });
   });

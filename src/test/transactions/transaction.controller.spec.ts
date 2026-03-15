@@ -1,7 +1,7 @@
 import { HttpStatus } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Prisma, Transaction } from '@prisma/client';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { TransactionController } from '../../transactions/transaction.controller';
 import { TransactionService } from '../../transactions/transaction.service';
 
@@ -9,35 +9,32 @@ describe('TransactionController', () => {
   let controller: TransactionController;
   let service: TransactionService;
   let mockResponse: Partial<Response>;
+  let mockRequest: Partial<Request>;
 
   const mockTransactionService = {
-    createTransaction: jest.fn((data: Prisma.TransactionCreateInput) => {
-      return { id: 1, ...data };
-    }),
-    update: jest.fn((id: number, data: Prisma.TransactionUpdateInput) => {
-      return { id, ...data };
-    }),
-    get: jest.fn((id: number) => {
-      return { id, amount: 100, name: 'Test transaction' };
-    }),
-    getAll: jest.fn((_accountingId: number) => {
-      return [{ id: 1, amount: 100, name: 'Test transaction' }];
-    }),
-    delete: jest.fn((id: number) => {
-      return { id, amount: 100, name: 'Test transaction' };
-    }),
+    createTransaction: jest.fn(),
+    update: jest.fn(),
+    get: jest.fn(),
+    getAll: jest.fn(),
+    delete: jest.fn(),
     getMetrics: jest.fn(),
   };
 
-  const accountingBook: Prisma.AccountingBookCreateNestedOneWithoutTransactionsInput =
-    {
-      create: {
-        name: 'Test',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        userId: 1,
-      },
-    };
+  const makeTransaction = (overrides: Partial<Transaction> = {}): Transaction => ({
+    id: 1,
+    amount: new Prisma.Decimal(100),
+    description: 'Test transaction',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    type: 'INCOME',
+    accountingBookId: 1,
+    supplierId: null,
+    categoryId: null,
+    paymentMethod: null,
+    dailyReportId: null,
+    valueDate: new Date(),
+    ...overrides,
+  });
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -52,10 +49,15 @@ describe('TransactionController', () => {
 
     controller = module.get<TransactionController>(TransactionController);
     service = module.get<TransactionService>(TransactionService);
+
     mockResponse = {
       status: jest.fn().mockReturnThis(),
       json: jest.fn().mockReturnThis(),
     } as Partial<Response>;
+
+    mockRequest = {
+      user: { sub: 1, username: 'test@example.com' },
+    } as Partial<Request>;
   });
 
   it('should be defined', () => {
@@ -63,46 +65,37 @@ describe('TransactionController', () => {
   });
 
   describe('createTransaction', () => {
-    it('should create a new transaction', async () => {
-      const data: Prisma.TransactionCreateInput = {
-        amount: new Prisma.Decimal(100),
-        description: 'Test transaction',
-        accountingBook: accountingBook,
-        valueDate: new Date(),
-        type: 'INCOME',
-      };
-      const result: Transaction = {
-        id: 1,
-        amount: new Prisma.Decimal(100),
-        description: 'Test transaction',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        type: 'INCOME',
-        accountingBookId: 1,
-        supplierId: null,
-        categoryId: null,
-        paymentMethod: null,
-        dailyReportId: null,
-        valueDate: new Date(),
-      };
+    const data: Prisma.TransactionUncheckedCreateInput = {
+      amount: new Prisma.Decimal(100),
+      description: 'Test transaction',
+      accountingBookId: 1,
+      valueDate: new Date(),
+      type: 'INCOME',
+    };
 
+    it('should create a new transaction', async () => {
+      const result = makeTransaction();
       jest.spyOn(service, 'createTransaction').mockResolvedValue(result);
-      await controller.createTransaction(data, mockResponse as Response);
+
+      await controller.createTransaction(
+        data,
+        mockRequest as Request,
+        mockResponse as Response,
+      );
+
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.CREATED);
       expect(mockResponse.json).toHaveBeenCalledWith(result);
     });
 
-    it('should return bad request if transaction creation fails', async () => {
-      const data: Prisma.TransactionCreateInput = {
-        amount: new Prisma.Decimal(100),
-        description: 'Test transaction',
-        accountingBook: accountingBook,
-        valueDate: new Date(),
-        type: 'INCOME',
-      };
-
+    it('should return bad request if accounting book does not belong to user', async () => {
       jest.spyOn(service, 'createTransaction').mockResolvedValue(null);
-      await controller.createTransaction(data, mockResponse as Response);
+
+      await controller.createTransaction(
+        data,
+        mockRequest as Request,
+        mockResponse as Response,
+      );
+
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
       expect(mockResponse.json).toHaveBeenCalledWith({
         message: 'Failed to create transaction',
@@ -110,16 +103,14 @@ describe('TransactionController', () => {
     });
 
     it('should return bad request if an unknown error occurs', async () => {
-      const data: Prisma.TransactionCreateInput = {
-        amount: new Prisma.Decimal(100),
-        description: 'Test transaction',
-        accountingBook: accountingBook,
-        valueDate: new Date(),
-        type: 'INCOME',
-      };
-
       jest.spyOn(service, 'createTransaction').mockRejectedValue(new Error());
-      await controller.createTransaction(data, mockResponse as Response);
+
+      await controller.createTransaction(
+        data,
+        mockRequest as Request,
+        mockResponse as Response,
+      );
+
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
       expect(mockResponse.json).toHaveBeenCalledWith({
         message: 'Unknown error',
@@ -128,48 +119,38 @@ describe('TransactionController', () => {
   });
 
   describe('updateTransaction', () => {
-    it('should update a transaction', async () => {
-      const data: Prisma.TransactionUncheckedUpdateInput = {
-        id: 1,
-        amount: 100,
-        description: 'Test transaction',
-        accountingBookId: 1,
-        valueDate: new Date(),
-        type: 'INCOME',
-      };
-      const result: Transaction = {
-        id: 1,
-        amount: new Prisma.Decimal(100),
-        description: 'Test transaction',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        type: 'INCOME',
-        accountingBookId: 1,
-        supplierId: null,
-        categoryId: null,
-        paymentMethod: null,
-        dailyReportId: null,
-        valueDate: new Date(),
-      };
+    const data: Prisma.TransactionUncheckedUpdateInput = {
+      id: 1,
+      amount: 100,
+      description: 'Test transaction',
+      accountingBookId: 1,
+      valueDate: new Date(),
+      type: 'INCOME',
+    };
 
+    it('should update a transaction', async () => {
+      const result = makeTransaction();
       jest.spyOn(service, 'update').mockResolvedValue(result);
-      await controller.updateTransaction(data, mockResponse as Response);
+
+      await controller.updateTransaction(
+        data,
+        mockRequest as Request,
+        mockResponse as Response,
+      );
+
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.OK);
       expect(mockResponse.json).toHaveBeenCalledWith(result);
     });
 
-    it('should return bad request if transaction update fails', async () => {
-      const data: Prisma.TransactionUncheckedUpdateInput = {
-        id: 1,
-        amount: 100,
-        description: 'Test transaction',
-        accountingBookId: 1,
-        valueDate: new Date(),
-        type: 'INCOME',
-      };
-
+    it('should return bad request when transaction does not belong to user', async () => {
       jest.spyOn(service, 'update').mockResolvedValue(null);
-      await controller.updateTransaction(data, mockResponse as Response);
+
+      await controller.updateTransaction(
+        data,
+        mockRequest as Request,
+        mockResponse as Response,
+      );
+
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
       expect(mockResponse.json).toHaveBeenCalledWith({
         message: 'Failed to update transaction',
@@ -177,17 +158,14 @@ describe('TransactionController', () => {
     });
 
     it('should return bad request if an unknown error occurs', async () => {
-      const data: Prisma.TransactionUncheckedUpdateInput = {
-        id: 1,
-        amount: 100,
-        description: 'Test transaction',
-        accountingBookId: 1,
-        valueDate: new Date(),
-        type: 'INCOME',
-      };
-
       jest.spyOn(service, 'update').mockRejectedValue(new Error());
-      await controller.updateTransaction(data, mockResponse as Response);
+
+      await controller.updateTransaction(
+        data,
+        mockRequest as Request,
+        mockResponse as Response,
+      );
+
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
       expect(mockResponse.json).toHaveBeenCalledWith({
         message: 'Unknown error',
@@ -195,12 +173,14 @@ describe('TransactionController', () => {
     });
 
     it('should return bad request if id is not a number', async () => {
-      const data = { id: '1', amount: 100, name: 'Test transaction' };
+      const badData = { id: '1', amount: 100 };
 
       await controller.updateTransaction(
-        data as Prisma.TransactionUncheckedUpdateInput,
+        badData as Prisma.TransactionUncheckedUpdateInput,
+        mockRequest as Request,
         mockResponse as Response,
       );
+
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
       expect(mockResponse.json).toHaveBeenCalledWith({
         message: 'Transaction id is required',
@@ -209,34 +189,29 @@ describe('TransactionController', () => {
   });
 
   describe('getTransaction', () => {
-    it('should get a transaction', async () => {
-      const id = 1;
-      const result: Transaction = {
-        id,
-        amount: new Prisma.Decimal(100),
-        description: 'Test transaction',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        type: 'INCOME',
-        accountingBookId: 1,
-        supplierId: null,
-        categoryId: null,
-        paymentMethod: null,
-        dailyReportId: null,
-        valueDate: new Date(),
-      };
-
+    it('should get a transaction belonging to user', async () => {
+      const result = makeTransaction();
       jest.spyOn(service, 'get').mockResolvedValue(result);
-      await controller.getTransaction(id, mockResponse as Response);
+
+      await controller.getTransaction(
+        1,
+        mockRequest as Request,
+        mockResponse as Response,
+      );
+
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.OK);
       expect(mockResponse.json).toHaveBeenCalledWith(result);
     });
 
-    it('should return not found if transaction does not exist', async () => {
-      const id = 1;
-
+    it('should return not found when transaction does not belong to user', async () => {
       jest.spyOn(service, 'get').mockResolvedValue(null);
-      await controller.getTransaction(id, mockResponse as Response);
+
+      await controller.getTransaction(
+        1,
+        mockRequest as Request,
+        mockResponse as Response,
+      );
+
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.NOT_FOUND);
       expect(mockResponse.json).toHaveBeenCalledWith({
         message: 'Transaction not found',
@@ -244,10 +219,14 @@ describe('TransactionController', () => {
     });
 
     it('should return bad request if an unknown error occurs', async () => {
-      const id = 1;
-
       jest.spyOn(service, 'get').mockRejectedValue(new Error());
-      await controller.getTransaction(id, mockResponse as Response);
+
+      await controller.getTransaction(
+        1,
+        mockRequest as Request,
+        mockResponse as Response,
+      );
+
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
       expect(mockResponse.json).toHaveBeenCalledWith({
         message: 'Unknown error',
@@ -256,45 +235,42 @@ describe('TransactionController', () => {
   });
 
   describe('getTransactions', () => {
-    it('should get all transactions', async () => {
-      const accountingId = 1;
-      const result: Transaction[] = [
-        {
-          id: 1,
-          amount: new Prisma.Decimal(100),
-          description: 'Test transaction',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          type: 'INCOME',
-          accountingBookId: 1,
-          supplierId: null,
-          categoryId: null,
-          paymentMethod: null,
-          dailyReportId: null,
-          valueDate: new Date(),
-        },
-      ];
-
+    it('should get all transactions for user', async () => {
+      const result: Transaction[] = [makeTransaction()];
       jest.spyOn(service, 'getAll').mockResolvedValue(result);
-      await controller.getTransactions(accountingId, mockResponse as Response);
+
+      await controller.getTransactions(
+        1,
+        mockRequest as Request,
+        mockResponse as Response,
+      );
+
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.OK);
       expect(mockResponse.json).toHaveBeenCalledWith(result);
     });
 
-    it('should return not found if no transactions exist', async () => {
-      const accountingId = 1;
-
+    it('should return not found if no transactions exist for user', async () => {
       jest.spyOn(service, 'getAll').mockResolvedValue([]);
-      await controller.getTransactions(accountingId, mockResponse as Response);
+
+      await controller.getTransactions(
+        1,
+        mockRequest as Request,
+        mockResponse as Response,
+      );
+
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.NOT_FOUND);
       expect(mockResponse.json).toHaveBeenCalledWith([]);
     });
 
     it('should return bad request if an unknown error occurs', async () => {
-      const accountingId = 1;
-
       jest.spyOn(service, 'getAll').mockRejectedValue(new Error());
-      await controller.getTransactions(accountingId, mockResponse as Response);
+
+      await controller.getTransactions(
+        1,
+        mockRequest as Request,
+        mockResponse as Response,
+      );
+
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
       expect(mockResponse.json).toHaveBeenCalledWith({
         message: 'Unknown error',
@@ -303,34 +279,29 @@ describe('TransactionController', () => {
   });
 
   describe('deleteTransaction', () => {
-    it('should delete a transaction', async () => {
-      const id = 1;
-      const result: Transaction = {
-        id,
-        amount: new Prisma.Decimal(100),
-        description: 'Test transaction',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        type: 'INCOME',
-        accountingBookId: 1,
-        supplierId: null,
-        categoryId: null,
-        paymentMethod: null,
-        dailyReportId: null,
-        valueDate: new Date(),
-      };
-
+    it('should delete a transaction belonging to user', async () => {
+      const result = makeTransaction();
       jest.spyOn(service, 'delete').mockResolvedValue(result);
-      await controller.deleteTransaction(id, mockResponse as Response);
+
+      await controller.deleteTransaction(
+        1,
+        mockRequest as Request,
+        mockResponse as Response,
+      );
+
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.OK);
       expect(mockResponse.json).toHaveBeenCalledWith(result);
     });
 
-    it('should return bad request if transaction deletion fails', async () => {
-      const id = 1;
-
+    it('should return bad request when transaction does not belong to user', async () => {
       jest.spyOn(service, 'delete').mockResolvedValue(null);
-      await controller.deleteTransaction(id, mockResponse as Response);
+
+      await controller.deleteTransaction(
+        1,
+        mockRequest as Request,
+        mockResponse as Response,
+      );
+
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
       expect(mockResponse.json).toHaveBeenCalledWith({
         message: 'Failed to delete transaction',
@@ -338,10 +309,14 @@ describe('TransactionController', () => {
     });
 
     it('should return bad request if an unknown error occurs', async () => {
-      const id = 1;
-
       jest.spyOn(service, 'delete').mockRejectedValue(new Error());
-      await controller.deleteTransaction(id, mockResponse as Response);
+
+      await controller.deleteTransaction(
+        1,
+        mockRequest as Request,
+        mockResponse as Response,
+      );
+
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
       expect(mockResponse.json).toHaveBeenCalledWith({
         message: 'Unknown error',
@@ -350,15 +325,15 @@ describe('TransactionController', () => {
   });
 
   describe('getMetrics', () => {
-    it('should get metrics', async () => {
-      const accountingId = 1;
+    it('should get metrics for user', async () => {
       const metrics = { totalIncome: 1000, totalExpense: 400, netRevenue: 600 };
-      (service.getMetrics as jest.Mock).mockResolvedValue(metrics);
+      jest.spyOn(service, 'getMetrics').mockResolvedValue(metrics);
 
       await controller.getMetrics(
-        accountingId,
+        1,
         '2023-01-01',
         '2023-01-31',
+        mockRequest as Request,
         mockResponse as Response,
       );
 
@@ -367,13 +342,16 @@ describe('TransactionController', () => {
     });
 
     it('should return bad request on failure', async () => {
-      (service.getMetrics as jest.Mock).mockRejectedValue(new Error());
+      jest.spyOn(service, 'getMetrics').mockRejectedValue(new Error());
+
       await controller.getMetrics(
         1,
         '2023-01-01',
         '2023-01-31',
+        mockRequest as Request,
         mockResponse as Response,
       );
+
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
     });
   });

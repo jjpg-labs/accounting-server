@@ -17,10 +17,14 @@ describe('PeriodicService', () => {
     transaction: {
       create: jest.fn(),
     },
+    accountingBook: {
+      findFirst: jest.fn(),
+    },
     $transaction: jest.fn((callback) => callback(mockPrismaService)),
   };
 
   beforeEach(async () => {
+    jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PeriodicService,
@@ -36,17 +40,30 @@ describe('PeriodicService', () => {
   });
 
   describe('create', () => {
-    it('should create a recurring transaction', async () => {
+    it('should create a recurring transaction if book is owned', async () => {
       const dto: any = {
         description: 'Test',
         amount: 100,
         startDate: new Date(),
+        accountingBookId: 1,
       };
+      mockPrismaService.accountingBook.findFirst.mockResolvedValue({ id: 1 });
       mockPrismaService.recurringTransaction.create.mockResolvedValue({
         id: 1,
         ...dto,
       });
       expect(await service.create(1, dto)).toEqual({ id: 1, ...dto });
+    });
+
+    it('should return null if book is not owned by user', async () => {
+      const dto: any = {
+        description: 'Test',
+        amount: 100,
+        startDate: new Date(),
+        accountingBookId: 99,
+      };
+      mockPrismaService.accountingBook.findFirst.mockResolvedValue(null);
+      expect(await service.create(1, dto)).toBeNull();
     });
   });
 

@@ -49,6 +49,7 @@ export class AuthController {
     return res.status(HttpStatus.OK).json(user);
   }
 
+  @Public()
   @Post('refresh')
   async refreshTokens(
     @Body() refreshTokenDto: { refreshToken: string },

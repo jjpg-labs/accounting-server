@@ -3,6 +3,8 @@ import { Prisma } from '@prisma/client';
 import { DailyReportsService } from '../../dailyReports/dailyReports.service';
 import { PrismaService } from '../../services/prisma.service';
 
+const USER_ID = 1;
+
 describe('DailyReportsService', () => {
   let service: DailyReportsService;
 
@@ -12,12 +14,13 @@ describe('DailyReportsService', () => {
     },
     dailyReport: {
       upsert: jest.fn(),
-      findUnique: jest.fn(),
+      findFirst: jest.fn(),
       findMany: jest.fn(),
     },
   };
 
   beforeEach(async () => {
+    jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         DailyReportsService,
@@ -39,8 +42,8 @@ describe('DailyReportsService', () => {
       const bookId = 1;
 
       mockPrismaService.transaction.aggregate
-        .mockResolvedValueOnce({ _sum: { amount: new Prisma.Decimal(50) } }) // income
-        .mockResolvedValueOnce({ _sum: { amount: new Prisma.Decimal(20) } }); // expense
+        .mockResolvedValueOnce({ _sum: { amount: new Prisma.Decimal(50) } })
+        .mockResolvedValueOnce({ _sum: { amount: new Prisma.Decimal(20) } });
 
       mockPrismaService.dailyReport.upsert.mockResolvedValue({ id: 1 });
 
@@ -71,20 +74,25 @@ describe('DailyReportsService', () => {
   });
 
   describe('getReport', () => {
-    it('should return a report', async () => {
+    it('should return a report for user', async () => {
       const report = { id: 1, accountingBookId: 1, date: new Date() };
-      mockPrismaService.dailyReport.findUnique.mockResolvedValue(report);
-      expect(await service.getReport(1, '2023-01-01')).toEqual(report);
+      mockPrismaService.dailyReport.findFirst.mockResolvedValue(report);
+      expect(await service.getReport(1, '2023-01-01', USER_ID)).toEqual(report);
+    });
+
+    it('should return null if not found', async () => {
+      mockPrismaService.dailyReport.findFirst.mockResolvedValue(null);
+      expect(await service.getReport(1, '2023-01-01', USER_ID)).toBeNull();
     });
   });
 
   describe('getReports', () => {
-    it('should return reports in range', async () => {
+    it('should return reports in range for user', async () => {
       const reports = [{ id: 1 }];
       mockPrismaService.dailyReport.findMany.mockResolvedValue(reports);
-      expect(await service.getReports(1, '2023-01-01', '2023-01-02')).toEqual(
-        reports,
-      );
+      expect(
+        await service.getReports(1, '2023-01-01', '2023-01-02', USER_ID),
+      ).toEqual(reports);
     });
   });
 });

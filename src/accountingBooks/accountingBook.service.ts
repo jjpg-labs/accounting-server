@@ -7,12 +7,10 @@ export class AccountingBookService {
   constructor(private prisma: PrismaService) {}
 
   async createAccountingBook(
-    data: Prisma.AccountingBookCreateInput,
+    data: Prisma.AccountingBookUncheckedCreateInput,
   ): Promise<AccountingBook | null> {
     try {
-      return await this.prisma.accountingBook.create({
-        data,
-      });
+      return await this.prisma.accountingBook.create({ data });
     } catch {
       return null;
     }
@@ -25,12 +23,10 @@ export class AccountingBookService {
     });
   }
 
-  async get(id: number): Promise<AccountingBook | null> {
+  async get(id: number, userId: number): Promise<AccountingBook | null> {
     try {
-      return await this.prisma.accountingBook.findUnique({
-        where: {
-          id,
-        },
+      return await this.prisma.accountingBook.findFirst({
+        where: { id, userId },
       });
     } catch {
       return null;
@@ -39,27 +35,31 @@ export class AccountingBookService {
 
   async update(
     id: number,
-    data: Prisma.AccountingBookUpdateInput,
+    data: Prisma.AccountingBookUncheckedUpdateInput,
+    userId: number,
   ): Promise<AccountingBook | null> {
     try {
-      return await this.prisma.accountingBook.update({
-        where: {
-          id,
-        },
-        data,
+      const existing = await this.prisma.accountingBook.findFirst({
+        where: { id, userId },
+        select: { id: true },
       });
+      if (!existing) return null;
+
+      return await this.prisma.accountingBook.update({ where: { id }, data });
     } catch {
       return null;
     }
   }
 
-  async delete(id: number): Promise<AccountingBook | null> {
+  async delete(id: number, userId: number): Promise<AccountingBook | null> {
     try {
-      return await this.prisma.accountingBook.delete({
-        where: {
-          id,
-        },
+      const existing = await this.prisma.accountingBook.findFirst({
+        where: { id, userId },
+        select: { id: true },
       });
+      if (!existing) return null;
+
+      return await this.prisma.accountingBook.delete({ where: { id } });
     } catch {
       return null;
     }

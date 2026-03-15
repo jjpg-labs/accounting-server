@@ -7,10 +7,11 @@ import {
   Post,
   Put,
   Query,
+  Req,
   Res,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { AccountingBookService } from './accountingBook.service';
 
 @Controller('book')
@@ -19,14 +20,17 @@ export class AccountingBookController {
 
   @Post()
   async createAccountingBook(
-    @Body() data: Prisma.AccountingBookCreateInput,
+    @Body() data: Prisma.AccountingBookUncheckedCreateInput,
+    @Req() req: Request,
     @Res() res: Response,
   ) {
     try {
+      const userId = req.user.sub;
       const newAccountingBook =
-        (await this.accountingBookService.createAccountingBook(data)) || {
-          message: 'Accounting book not created',
-        };
+        (await this.accountingBookService.createAccountingBook({
+          ...data,
+          userId,
+        })) || { message: 'Accounting book not created' };
 
       const status =
         'message' in newAccountingBook
@@ -37,13 +41,11 @@ export class AccountingBookController {
       res.status(HttpStatus.BAD_REQUEST).json({ message: 'An error occurred' });
     }
   }
+
   @Get('all')
-  async getAccountingBooks(
-    @Query('userId') userId: number,
-    @Res() res: Response,
-  ) {
+  async getAccountingBooks(@Req() req: Request, @Res() res: Response) {
     try {
-      const books = await this.accountingBookService.getAll(userId);
+      const books = await this.accountingBookService.getAll(req.user.sub);
       res.status(HttpStatus.OK).json(books);
     } catch {
       res
@@ -53,11 +55,16 @@ export class AccountingBookController {
   }
 
   @Get()
-  async getAccountingBook(@Query('id') id: number, @Res() res: Response) {
+  async getAccountingBook(
+    @Query('id') id: number,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
     try {
-      const accountigBook = (await this.accountingBookService.get(id)) || {
-        message: 'Accounting book not found',
-      };
+      const accountigBook =
+        (await this.accountingBookService.get(id, req.user.sub)) || {
+          message: 'Accounting book not found',
+        };
       const status =
         'message' in accountigBook ? HttpStatus.NOT_FOUND : HttpStatus.OK;
 
@@ -70,6 +77,7 @@ export class AccountingBookController {
   @Put()
   async updateAccountingBook(
     @Body() data: Prisma.AccountingBookUncheckedUpdateInput,
+    @Req() req: Request,
     @Res() res: Response,
   ) {
     if (typeof data.id !== 'number') {
@@ -82,6 +90,7 @@ export class AccountingBookController {
       const accountingBook = await this.accountingBookService.update(
         data.id,
         data,
+        req.user.sub,
       );
       const status = accountingBook ? HttpStatus.OK : HttpStatus.BAD_REQUEST;
       res
@@ -93,9 +102,16 @@ export class AccountingBookController {
   }
 
   @Delete()
-  async deleteAccountingBook(@Query('id') id: number, @Res() res: Response) {
+  async deleteAccountingBook(
+    @Query('id') id: number,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
     try {
-      const accountingBook = await this.accountingBookService.delete(id);
+      const accountingBook = await this.accountingBookService.delete(
+        id,
+        req.user.sub,
+      );
       const status = accountingBook ? HttpStatus.OK : HttpStatus.BAD_REQUEST;
       res
         .status(status)
