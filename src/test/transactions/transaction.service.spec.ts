@@ -211,6 +211,23 @@ describe('TransactionService', () => {
     });
   });
 
+  describe('exportToXlsx', () => {
+    it('should return a Buffer with xlsx data', async () => {
+      jest.spyOn(prismaService.accountingBook, 'findFirst').mockResolvedValue({ id: 1 } as any);
+      jest.spyOn(prismaService.transaction, 'findMany').mockResolvedValue([
+        makeTransaction({ description: 'Test', valueDate: new Date('2023-06-01') }) as any,
+      ]);
+      const buffer = await service.exportToXlsx(1, USER_ID);
+      expect(buffer).toBeInstanceOf(Buffer);
+      expect((buffer as Buffer).length).toBeGreaterThan(0);
+    });
+
+    it('should return null if book does not belong to user', async () => {
+      jest.spyOn(prismaService.accountingBook, 'findFirst').mockResolvedValue(null);
+      expect(await service.exportToXlsx(1, USER_ID)).toBeNull();
+    });
+  });
+
   describe('getMetrics', () => {
     it('should return metrics for an accounting book belonging to user', async () => {
       const metrics = [
