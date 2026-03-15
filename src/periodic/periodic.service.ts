@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../services/prisma.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { CreateRecurringDto } from './dto/create-recurring.dto';
+import { UpdateRecurringDto } from './dto/update-recurring.dto';
 import { Frequency } from '@prisma/client';
 
 @Injectable()
@@ -36,6 +37,18 @@ export class PeriodicService {
   async findOne(id: number, userId: number) {
     return this.prisma.recurringTransaction.findFirst({
       where: { id, userId },
+      include: { category: true },
+    });
+  }
+
+  async update(id: number, userId: number, dto: UpdateRecurringDto) {
+    const record = await this.prisma.recurringTransaction.findFirst({
+      where: { id, userId },
+    });
+    if (!record) return null;
+    return this.prisma.recurringTransaction.update({
+      where: { id },
+      data: dto,
       include: { category: true },
     });
   }

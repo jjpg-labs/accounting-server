@@ -2,15 +2,18 @@ import {
   Controller,
   Get,
   Post,
+  Put,
   Patch,
   Body,
   Param,
   Delete,
   Request,
   UseGuards,
+  NotFoundException,
 } from '@nestjs/common';
 import { PeriodicService } from './periodic.service';
 import { CreateRecurringDto } from './dto/create-recurring.dto';
+import { UpdateRecurringDto } from './dto/update-recurring.dto';
 import { AuthGuard } from '../auth/auth.guard';
 
 @Controller('periodic')
@@ -36,6 +39,13 @@ export class PeriodicController {
   @Get(':id')
   findOne(@Request() req, @Param('id') id: number) {
     return this.periodicService.findOne(id, req.user.sub);
+  }
+
+  @Put(':id')
+  async update(@Request() req, @Param('id') id: number, @Body() dto: UpdateRecurringDto) {
+    const result = await this.periodicService.update(id, req.user.sub, dto);
+    if (!result) throw new NotFoundException('Recurring transaction not found');
+    return result;
   }
 
   @Patch(':id/toggle')
