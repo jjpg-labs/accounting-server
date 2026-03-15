@@ -8,6 +8,7 @@ export class DailyReportsService {
 
   async closeDay(
     accountingBookId: number,
+    userId: number,
     date: string,
     payload: {
       closingBalance: string;
@@ -16,6 +17,11 @@ export class DailyReportsService {
       notes?: string;
     },
   ) {
+    const book = await this.prisma.accountingBook.findFirst({
+      where: { id: accountingBookId, userId },
+    });
+    if (!book) return null;
+
     const d = new Date(date);
 
     const income = await this.prisma.transaction.aggregate({

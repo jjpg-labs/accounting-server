@@ -11,7 +11,9 @@ describe('PeriodicController', () => {
     findAll: jest.fn(),
     processPending: jest.fn(),
     findOne: jest.fn(),
+    update: jest.fn(),
     remove: jest.fn(),
+    toggleActive: jest.fn(),
   };
 
   const mockRequest = {
@@ -57,6 +59,18 @@ describe('PeriodicController', () => {
   it('should find one', async () => {
     mockPeriodicService.findOne.mockResolvedValue({ id: 1 });
     expect(await controller.findOne(mockRequest as any, 1)).toEqual({ id: 1 });
+  });
+
+  describe('update', () => {
+    it('should update and return the record', async () => {
+      mockPeriodicService.update.mockResolvedValue({ id: 1, description: 'New' });
+      expect(await controller.update(mockRequest as any, 1, { description: 'New' } as any)).toEqual({ id: 1, description: 'New' });
+    });
+
+    it('should throw NotFoundException when record not found', async () => {
+      mockPeriodicService.update.mockResolvedValue(null);
+      await expect(controller.update(mockRequest as any, 1, {} as any)).rejects.toThrow('Recurring transaction not found');
+    });
   });
 
   it('should remove', async () => {

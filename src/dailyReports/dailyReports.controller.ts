@@ -59,15 +59,23 @@ export class DailyReportsController {
       removedFromCash?: string;
       notes?: string;
     },
+    @Req() req: Request,
     @Res() res: Response,
   ) {
     try {
+      const userId = req.user.sub;
       const { accountingBookId, date, ...payload } = body;
       const report = await this.dailyReportsService.closeDay(
         accountingBookId,
+        userId,
         date,
         payload,
       );
+      if (!report) {
+        return res
+          .status(HttpStatus.FORBIDDEN)
+          .json({ message: 'Accounting book not found or access denied' });
+      }
       return res.status(HttpStatus.OK).json(report);
     } catch {
       return res

@@ -9,6 +9,9 @@ describe('DailyReportsService', () => {
   let service: DailyReportsService;
 
   const mockPrismaService = {
+    accountingBook: {
+      findFirst: jest.fn(),
+    },
     transaction: {
       aggregate: jest.fn(),
     },
@@ -41,13 +44,14 @@ describe('DailyReportsService', () => {
       const payload = { closingBalance: '100.00' };
       const bookId = 1;
 
+      mockPrismaService.accountingBook.findFirst.mockResolvedValue({ id: bookId, userId: USER_ID });
       mockPrismaService.transaction.aggregate
         .mockResolvedValueOnce({ _sum: { amount: new Prisma.Decimal(50) } })
         .mockResolvedValueOnce({ _sum: { amount: new Prisma.Decimal(20) } });
 
       mockPrismaService.dailyReport.upsert.mockResolvedValue({ id: 1 });
 
-      const result = await service.closeDay(bookId, date, payload);
+      const result = await service.closeDay(bookId, USER_ID, date, payload);
       expect(result).toEqual({ id: 1 });
       expect(mockPrismaService.transaction.aggregate).toHaveBeenCalledTimes(2);
     });
@@ -55,12 +59,13 @@ describe('DailyReportsService', () => {
     it('should handle closeDay with no transactions', async () => {
       const accountingBookId = 1;
       const date = '2023-01-01';
+      mockPrismaService.accountingBook.findFirst.mockResolvedValue({ id: accountingBookId, userId: USER_ID });
       mockPrismaService.transaction.aggregate.mockResolvedValue({
         _sum: { amount: null },
       });
       mockPrismaService.dailyReport.upsert.mockResolvedValue({});
 
-      await service.closeDay(accountingBookId, date, { closingBalance: '0' });
+      await service.closeDay(accountingBookId, USER_ID, date, { closingBalance: '0' });
 
       expect(mockPrismaService.dailyReport.upsert).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -70,6 +75,15 @@ describe('DailyReportsService', () => {
           }),
         }),
       );
+    });
+
+    it('should return null if the book does not belong to the user', async () => {
+      mockPrismaService.accountingBook.findFirst.mockResolvedValue(null);
+
+      const result = await service.closeDay(1, 999, '2023-01-01', { closingBalance: '0' });
+
+      expect(result).toBeNull();
+      expect(mockPrismaService.dailyReport.upsert).not.toHaveBeenCalled();
     });
   });
 

@@ -11,6 +11,7 @@ describe('BudgetsController', () => {
     create: jest.fn(),
     findAll: jest.fn(),
     findOne: jest.fn(),
+    update: jest.fn(),
     remove: jest.fn(),
   };
 
@@ -52,6 +53,18 @@ describe('BudgetsController', () => {
   it('should find one budget', async () => {
     mockBudgetsService.findOne.mockResolvedValue({ id: 1 });
     expect(await controller.findOne(mockRequest as any, 1)).toEqual({ id: 1 });
+  });
+
+  it('should update a budget', async () => {
+    const updated = { id: 1, name: 'New' };
+    mockBudgetsService.update.mockResolvedValue(updated);
+    expect(await controller.update(mockRequest as any, 1, { name: 'New' } as any)).toEqual(updated);
+    expect(service.update).toHaveBeenCalledWith(1, 1, { name: 'New' });
+  });
+
+  it('should throw NotFoundException when budget not found on update', async () => {
+    mockBudgetsService.update.mockResolvedValue(null);
+    await expect(controller.update(mockRequest as any, 1, {} as any)).rejects.toThrow('Budget not found');
   });
 
   it('should remove a budget', async () => {

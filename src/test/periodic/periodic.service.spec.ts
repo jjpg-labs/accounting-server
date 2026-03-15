@@ -83,6 +83,22 @@ describe('PeriodicService', () => {
     });
   });
 
+  describe('update', () => {
+    it('should update and return the record', async () => {
+      const rec = { id: 1, userId: 1, description: 'Old' };
+      const updated = { id: 1, description: 'New' };
+      mockPrismaService.recurringTransaction.findFirst.mockResolvedValue(rec);
+      mockPrismaService.recurringTransaction.update.mockResolvedValue(updated);
+      expect(await service.update(1, 1, { description: 'New' } as any)).toEqual(updated);
+    });
+
+    it('should return null if record does not belong to user', async () => {
+      mockPrismaService.recurringTransaction.findFirst.mockResolvedValue(null);
+      expect(await service.update(1, 999, { description: 'X' } as any)).toBeNull();
+      expect(mockPrismaService.recurringTransaction.update).not.toHaveBeenCalled();
+    });
+  });
+
   describe('remove', () => {
     it('should remove and return result', async () => {
       const result = { count: 1 };
