@@ -12,6 +12,7 @@ describe('DailyReportsController', () => {
   const mockDailyReportsService = {
     getReport: jest.fn(),
     getReports: jest.fn(),
+    closeDay: jest.fn(),
   };
 
   const mockResponse = {
@@ -105,6 +106,35 @@ describe('DailyReportsController', () => {
         mockRequest as any,
         mockResponse as any as Response,
       );
+      expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
+    });
+  });
+
+  describe('closeDay', () => {
+    const closeBody = {
+      accountingBookId: 1,
+      date: '2023-01-01',
+      closingBalance: '100.00',
+    };
+
+    it('should close the day and return the report', async () => {
+      const report = { id: 1 };
+      mockDailyReportsService.closeDay.mockResolvedValue(report);
+      await controller.closeDay(closeBody, mockRequest as any, mockResponse as any as Response);
+      expect(mockDailyReportsService.closeDay).toHaveBeenCalledWith(1, USER_ID, '2023-01-01', { closingBalance: '100.00' });
+      expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.OK);
+      expect(mockResponse.json).toHaveBeenCalledWith(report);
+    });
+
+    it('should return 403 when service returns null (ownership check failed)', async () => {
+      mockDailyReportsService.closeDay.mockResolvedValue(null);
+      await controller.closeDay(closeBody, mockRequest as any, mockResponse as any as Response);
+      expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.FORBIDDEN);
+    });
+
+    it('should return 400 on service error', async () => {
+      mockDailyReportsService.closeDay.mockRejectedValue(new Error());
+      await controller.closeDay(closeBody, mockRequest as any, mockResponse as any as Response);
       expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.BAD_REQUEST);
     });
   });
