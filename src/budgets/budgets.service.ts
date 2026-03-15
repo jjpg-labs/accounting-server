@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../services/prisma.service';
 import { CreateBudgetDto } from './dto/create-budget.dto';
+import { UpdateBudgetDto } from './dto/update-budget.dto';
 
 @Injectable()
 export class BudgetsService {
@@ -25,6 +26,16 @@ export class BudgetsService {
   async findOne(id: number, userId: number) {
     return this.prisma.budget.findFirst({
       where: { id, userId },
+      include: { category: true },
+    });
+  }
+
+  async update(id: number, userId: number, updateBudgetDto: UpdateBudgetDto) {
+    const budget = await this.prisma.budget.findFirst({ where: { id, userId } });
+    if (!budget) return null;
+    return this.prisma.budget.update({
+      where: { id },
+      data: updateBudgetDto,
       include: { category: true },
     });
   }
