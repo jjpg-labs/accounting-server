@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { AccountingBookModule } from './accountingBooks/accountingBook.module';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from './auth/auth.guard';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { TransactionModule } from './transactions/transaction.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { BudgetsModule } from './budgets/budgets.module';
@@ -21,6 +22,7 @@ import { UserModule } from './users/user.module';
     ConfigModule.forRoot({
       load: [configuration],
     }),
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
     AuthModule,
     AccountingBookModule,
     TransactionModule,
@@ -35,6 +37,10 @@ import { UserModule } from './users/user.module';
   controllers: [AppController],
   providers: [
     AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
     {
       provide: APP_GUARD,
       useClass: AuthGuard,

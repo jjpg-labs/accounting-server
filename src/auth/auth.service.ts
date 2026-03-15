@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../services/prisma.service';
 import { UserService } from '../users/user.service';
 import { SignInParams, SignInResponse } from './auth.types';
@@ -20,7 +21,8 @@ export class AuthService {
   async signIn({ email, password }: SignInParams): Promise<SignInResponse> {
     const user = await this.userService.getByEmail(email);
 
-    if (!user || user.password !== password) {
+    const passwordMatch = user && (await bcrypt.compare(password, user.password));
+    if (!passwordMatch) {
       return { message: 'Unauthorized' };
     }
 

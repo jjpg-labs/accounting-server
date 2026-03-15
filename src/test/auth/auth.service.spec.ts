@@ -4,6 +4,12 @@ import { UserService } from '../../users/user.service';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../services/prisma.service';
 import { SignInParams } from 'src/auth/auth.types';
+import * as bcrypt from 'bcrypt';
+
+jest.mock('bcrypt', () => ({
+  compare: jest.fn(),
+  hash: jest.fn(),
+}));
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -54,6 +60,7 @@ describe('AuthService', () => {
       jest
         .spyOn(jwtService, 'signAsync')
         .mockImplementation(async () => 'token');
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
       jest.spyOn(prismaService.refreshToken, 'create').mockResolvedValue(null);
 
@@ -88,6 +95,7 @@ describe('AuthService', () => {
       jest
         .spyOn(userService, 'getByEmail')
         .mockImplementation(async () => user);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
       const result = await service.signIn(signInParams);
 
       expect(result).toEqual({ message: 'Unauthorized' });

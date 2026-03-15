@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Prisma, Transaction } from '@prisma/client';
 import { PrismaService } from '../services/prisma.service';
 
 @Injectable()
 export class TransactionService {
+  private readonly logger = new Logger(TransactionService.name);
   constructor(private prisma: PrismaService) {}
 
   async createTransaction(
@@ -19,7 +20,7 @@ export class TransactionService {
 
       return await this.prisma.transaction.create({ data });
     } catch (error) {
-      console.log(error);
+      this.logger.error('Error creating transaction', error);
       return null;
     }
   }
@@ -113,7 +114,7 @@ export class TransactionService {
 
       return result;
     } catch (error) {
-      console.error('Error fetching metrics:', error);
+      this.logger.error('Error fetching metrics', error);
       return { totalIncome: 0, totalExpense: 0, netRevenue: 0 };
     }
   }
