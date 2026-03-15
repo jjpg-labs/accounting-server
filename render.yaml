@@ -4,8 +4,8 @@ services:
     runtime: node
     plan: free
     region: frankfurt
-    buildCommand: npm install && npm run build && npx prisma generate
-    startCommand: npx prisma migrate deploy && node dist/main.js
+    buildCommand: npm install && npx prisma generate
+    startCommand: npm run build && npx prisma migrate deploy && node dist/main.js
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
