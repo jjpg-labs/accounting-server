@@ -1,13 +1,14 @@
 import { PrismaClient, Prisma, TransactionType, PaymentMethod } from '@prisma/client';
 import * as XLSX from 'xlsx';
+import * as bcrypt from 'bcrypt';
 
 // ---------------------------------------------------------------------------
 // CONFIGURACIÓN — editar antes de ejecutar
 // ---------------------------------------------------------------------------
 const EXCEL_FILE_PATH = '/home/jjpg95/Descargas/Operativa estanco.xlsx';
-const PROD_USER_EMAIL = 'owner@estanco.com';          // CAMBIAR
-const PROD_USER_NAME = 'Propietario';                  // CAMBIAR
-const PROD_USER_PASS = 'CAMBIAR_ANTES_DE_EJECUTAR';   // CAMBIAR
+const PROD_USER_EMAIL = process.env.PROD_USER_EMAIL ?? '';
+const PROD_USER_NAME  = process.env.PROD_USER_NAME  ?? 'Propietario';
+const PROD_USER_PASS  = process.env.PROD_USER_PASS  ?? '';
 // ---------------------------------------------------------------------------
 
 const prisma = new PrismaClient();
@@ -16,9 +17,10 @@ async function main() {
   console.log('Iniciando seed de producción...');
 
   // 1. Upsert usuario
+  const hashedPassword = await bcrypt.hash(PROD_USER_PASS, 12);
   const user = await prisma.user.upsert({
     where: { email: PROD_USER_EMAIL },
-    create: { email: PROD_USER_EMAIL, name: PROD_USER_NAME, password: PROD_USER_PASS },
+    create: { email: PROD_USER_EMAIL, name: PROD_USER_NAME, password: hashedPassword },
     update: {},
   });
   console.log(`Usuario: ${user.email} (id=${user.id})`);
@@ -44,14 +46,14 @@ async function main() {
   });
   console.log(`Categorías: Ventas(${catVentas.id}), Gastos(${catGastos.id})`);
 
-  // 4. Idempotencia — saltar si ya hay transacciones en este libro
+  // 4. Idempotencia
   const existing = await prisma.transaction.count({ where: { accountingBookId: book.id } });
   if (existing > 0) {
     console.log(`Ya existen ${existing} transacciones. Saltando importación.`);
     return;
   }
 
-  // 5. Leer Excel (cellDates:true convierte automáticamente seriales de fecha a Date de JS)
+  // 5. Leer Excel
   console.log(`Leyendo Excel: ${EXCEL_FILE_PATH}`);
   const workbook = XLSX.readFile(EXCEL_FILE_PATH, { cellDates: true });
   const sheet = workbook.Sheets['Diario'];
@@ -62,24 +64,15 @@ async function main() {
 
   console.log(`Filas encontradas: ${rows.length}`);
 
-  // 6. Mapear filas a TransactionCreateManyInput
+  // 6. Mapear a TransactionCreateManyInput
   const transactions: Prisma.TransactionCreateManyInput[] = [];
   let skipped = 0;
 
   for (const row of rows) {
     const tipo = (row.Tipo || '').trim();
-    if (tipo !== 'Ingreso' && tipo !== 'Gasto') {
-      skipped++;
-      continue;
-    }
-    if (!row.Fecha || !(row.Fecha instanceof Date)) {
-      skipped++;
-      continue;
-    }
-    if (!row.Monto || isNaN(row.Monto)) {
-      skipped++;
-      continue;
-    }
+    if (tipo !== 'Ingreso' && tipo !== 'Gasto') { skipped++; continue; }
+    if (!row.Fecha || !(row.Fecha instanceof Date)) { skipped++; continue; }
+    if (!row.Monto || isNaN(row.Monto)) { skipped++; continue; }
 
     const type: TransactionType = tipo === 'Ingreso' ? 'INCOME' : 'EXPENSE';
     transactions.push({
@@ -94,7 +87,7 @@ async function main() {
 
   if (skipped > 0) console.warn(`Filas saltadas por datos inválidos: ${skipped}`);
 
-  // 7. Inserción en batches de 1.000 para evitar límites de tamaño de sentencia
+  // 7. Inserción en batches de 1.000
   const BATCH_SIZE = 1000;
   let inserted = 0;
   for (let i = 0; i < transactions.length; i += BATCH_SIZE) {
@@ -108,10 +101,5 @@ async function main() {
 }
 
 main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+  .catch((e) => { console.error(e); process.exit(1); })
+  .finally(async () => { await prisma.$disconnect(); });
