@@ -46,6 +46,18 @@ export class PeriodicService {
     });
   }
 
+  async toggleActive(id: number, userId: number) {
+    const record = await this.prisma.recurringTransaction.findFirst({
+      where: { id, userId },
+      select: { id: true, active: true },
+    });
+    if (!record) return null;
+    return this.prisma.recurringTransaction.update({
+      where: { id },
+      data: { active: !record.active },
+    });
+  }
+
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async handleCron() {
     this.logger.log('Running recurring transactions check...');

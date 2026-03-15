@@ -1,4 +1,4 @@
-import { Controller, Get, HttpStatus, Query, Req, Res } from '@nestjs/common';
+import { Body, Controller, Get, HttpStatus, Post, Query, Req, Res } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { DailyReportsService } from './dailyReports.service';
 
@@ -46,6 +46,33 @@ export class DailyReportsController {
       return res
         .status(HttpStatus.BAD_REQUEST)
         .json({ message: 'Failed to fetch report(s)' });
+    }
+  }
+
+  @Post('close')
+  async closeDay(
+    @Body() body: {
+      accountingBookId: number;
+      date: string;
+      closingBalance: string;
+      cashLeftForNext?: string;
+      removedFromCash?: string;
+      notes?: string;
+    },
+    @Res() res: Response,
+  ) {
+    try {
+      const { accountingBookId, date, ...payload } = body;
+      const report = await this.dailyReportsService.closeDay(
+        accountingBookId,
+        date,
+        payload,
+      );
+      return res.status(HttpStatus.OK).json(report);
+    } catch {
+      return res
+        .status(HttpStatus.BAD_REQUEST)
+        .json({ message: 'Failed to close day' });
     }
   }
 }

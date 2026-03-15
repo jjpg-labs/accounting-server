@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
   Body,
   Param,
   Delete,
@@ -35,6 +36,11 @@ export class PeriodicController {
   @Get(':id')
   findOne(@Request() req, @Param('id') id: number) {
     return this.periodicService.findOne(id, req.user.sub);
+  }
+
+  @Patch(':id/toggle')
+  toggleActive(@Request() req, @Param('id') id: number) {
+    return this.periodicService.toggleActive(id, req.user.sub);
   }
 
   @Delete(':id')
