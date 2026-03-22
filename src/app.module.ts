@@ -17,6 +17,7 @@ import { DailyReportsModule } from './dailyReports/dailyReports.module';
 import { SupplierModule } from './suppliers/supplier.module';
 import { UserModule } from './users/user.module';
 import { MailModule } from './mail/mail.module';
+import { SavingsGoalsModule } from './savings-goals/savings-goals.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { MailModule } from './mail/mail.module';
     SupplierModule,
     UserModule,
     MailModule,
+    SavingsGoalsModule,
   ],
   controllers: [AppController],
   providers: [
