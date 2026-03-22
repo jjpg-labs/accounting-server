@@ -1,9 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { MailerService } from '@nestjs-modules/mailer';
+import { Resend } from 'resend';
 
 @Injectable()
 export class MailService {
-  constructor(private mailerService: MailerService) {}
+  private resend: Resend;
+
+  constructor() {
+    this.resend = new Resend(process.env.RESEND_API_KEY);
+  }
 
   async sendContactMessage(
     name: string,
@@ -13,7 +17,8 @@ export class MailService {
     const to = process.env.CONTACT_EMAIL;
     if (!to) throw new Error('CONTACT_EMAIL environment variable is not set');
 
-    await this.mailerService.sendMail({
+    await this.resend.emails.send({
+      from: process.env.MAIL_FROM || 'WealthWise <noreply@jjpg.dev>',
       to,
       subject: `[WealthWise] Mensaje de ${name}`,
       text: `De: ${name} <${fromEmail}>\n\n${message}`,
@@ -24,7 +29,8 @@ export class MailService {
   async sendPasswordReset(email: string, token: string): Promise<void> {
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
 
-    await this.mailerService.sendMail({
+    await this.resend.emails.send({
+      from: process.env.MAIL_FROM || 'WealthWise <noreply@jjpg.dev>',
       to: email,
       subject: 'Restablecer contraseña — WealthWise',
       html: `<!DOCTYPE html>
