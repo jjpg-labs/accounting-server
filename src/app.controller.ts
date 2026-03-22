@@ -43,8 +43,9 @@ export class AppController {
     try {
       await this.mailService.sendContactMessage(body.name, body.email, body.message);
       return res.status(HttpStatus.OK).json({ success: true });
-    } catch {
-      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Failed to send message' });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: message });
     }
   }
 }
