@@ -18,6 +18,7 @@ import { SupplierModule } from './suppliers/supplier.module';
 import { UserModule } from './users/user.module';
 import { MailModule } from './mail/mail.module';
 import { SavingsGoalsModule } from './savings-goals/savings-goals.module';
+import { NetWorthModule } from './net-worth/net-worth.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { SavingsGoalsModule } from './savings-goals/savings-goals.module';
     UserModule,
     MailModule,
     SavingsGoalsModule,
+    NetWorthModule,
   ],
   controllers: [AppController],
   providers: [

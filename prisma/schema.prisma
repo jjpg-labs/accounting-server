@@ -23,6 +23,8 @@ model User {
   suppliers             Supplier[]
   passwordResetTokens   PasswordResetToken[]
   savingsGoals          SavingsGoal[]
+  assets                Asset[]
+  liabilities           Liability[]
 }
 
 model RefreshToken {
@@ -192,6 +194,50 @@ model SavingsGoal {
   user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model Asset {
+  id        Int           @id @default(autoincrement())
+  name      String
+  value     Decimal       @db.Decimal(14, 2)
+  category  AssetCategory
+  notes     String?
+  userId    Int
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Liability {
+  id        Int               @id @default(autoincrement())
+  name      String
+  amount    Decimal           @db.Decimal(14, 2)
+  category  LiabilityCategory
+  notes     String?
+  userId    Int
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+enum AssetCategory {
+  CASH
+  INVESTMENT
+  REAL_ESTATE
+  VEHICLE
+  OTHER
+}
+
+enum LiabilityCategory {
+  MORTGAGE
+  CAR_LOAN
+  CREDIT_CARD
+  STUDENT_LOAN
+  OTHER
 }
 
 enum TransactionType {
