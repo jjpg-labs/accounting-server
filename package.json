@@ -22,6 +22,7 @@
     "merge:caja": "ts-node prisma/merge-caja.ts"
   },
   "dependencies": {
+    "@nestjs-modules/mailer": "^2.3.0",
     "@nestjs/common": "^11.1.6",
     "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.1.6",
@@ -33,7 +34,9 @@
     "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
+    "handlebars": "^4.7.8",
     "helmet": "^8.1.0",
+    "nodemailer": "^8.0.3",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.1"
   },
@@ -45,6 +48,7 @@
     "@types/express": "^5.0.0",
     "@types/jest": "^29.5.2",
     "@types/node": "^20.3.1",
+    "@types/nodemailer": "^7.0.11",
     "@types/supertest": "^6.0.0",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
@@ -79,6 +83,9 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",
+    "setupFiles": [
+      "<rootDir>/test/setup.ts"
+    ],
     "moduleDirectories": [
       "node_modules",
       "src"

@@ -1,8 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 import { PrismaService } from '../services/prisma.service';
 import { UserService } from '../users/user.service';
+import { MailService } from '../mail/mail.service';
 import { SignInParams, SignInResponse } from './auth.types';
 
 interface JwtPayload {
@@ -16,6 +18,7 @@ export class AuthService {
     private userService: UserService,
     private jwtService: JwtService,
     private prisma: PrismaService,
+    private mailService: MailService,
   ) {}
 
   async signIn({ email, password }: SignInParams): Promise<SignInResponse> {
@@ -103,5 +106,53 @@ export class AuthService {
 
       return { message: 'Invalid refresh token' };
     }
+  }
+
+  async forgotPassword(email: string): Promise<void> {
+    const user = await this.userService.getByEmail(email);
+    if (!user) return; // Never reveal if email exists
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+    await this.prisma.passwordResetToken.create({
+      data: {
+        token,
+        userId: user.id,
+        expiresAt,
+      },
+    });
+
+    await this.mailService.sendPasswordReset(user.email, token);
+  }
+
+  async resetPassword(
+    token: string,
+    newPassword: string,
+  ): Promise<{ message: string } | void> {
+    const resetToken = await this.prisma.passwordResetToken.findUnique({
+      where: { token },
+    });
+
+    if (!resetToken || resetToken.used || resetToken.expiresAt < new Date()) {
+      return { message: 'Invalid or expired token' };
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: resetToken.userId },
+        data: { password: hashedPassword },
+      }),
+      this.prisma.passwordResetToken.update({
+        where: { token },
+        data: { used: true },
+      }),
+      this.prisma.refreshToken.updateMany({
+        where: { userId: resetToken.userId },
+        data: { revoked: true },
+      }),
+    ]);
   }
 }

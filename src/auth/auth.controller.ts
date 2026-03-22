@@ -12,6 +12,8 @@ import { AuthService } from './auth.service';
 import { Public } from './auth.guard';
 import { Response } from 'express';
 import { DecodedToken } from './auth.types';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -83,5 +85,32 @@ export class AuthController {
     return res
       .status(HttpStatus.OK)
       .json({ message: 'Logged out successfully' });
+  }
+
+  @Public()
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Post('forgot-password')
+  async forgotPassword(
+    @Body() body: ForgotPasswordDto,
+    @Res() res: Response,
+  ) {
+    await this.authService.forgotPassword(body.email);
+    return res
+      .status(HttpStatus.OK)
+      .json({ message: 'If that email is registered, a reset link has been sent' });
+  }
+
+  @Public()
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Post('reset-password')
+  async resetPassword(
+    @Body() body: ResetPasswordDto,
+    @Res() res: Response,
+  ) {
+    const result = await this.authService.resetPassword(body.token, body.newPassword);
+    if (result && 'message' in result) {
+      return res.status(HttpStatus.BAD_REQUEST).json(result);
+    }
+    return res.status(HttpStatus.OK).json({ message: 'Password updated successfully' });
   }
 }

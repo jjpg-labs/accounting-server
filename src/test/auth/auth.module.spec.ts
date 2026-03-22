@@ -19,8 +19,6 @@ describe('AuthModule', () => {
           signOptions: { expiresIn: '60s' },
         }),
       ],
-      controllers: [AuthController],
-      providers: [AuthService, UserService, PrismaService],
     }).compile();
   });
 

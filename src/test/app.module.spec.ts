@@ -18,16 +18,6 @@ describe('AppModule', () => {
           load: [() => ({})],
         }),
         AppModule,
-        AuthModule,
-        AccountingBookModule,
-      ],
-      controllers: [AppController],
-      providers: [
-        AppService,
-        {
-          provide: APP_GUARD,
-          useClass: AuthGuard,
-        },
       ],
     }).compile();
   });

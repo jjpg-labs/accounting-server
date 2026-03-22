@@ -3,6 +3,7 @@ import { AuthService } from '../../auth/auth.service';
 import { UserService } from '../../users/user.service';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../services/prisma.service';
+import { MailService } from '../../mail/mail.service';
 import { SignInParams } from 'src/auth/auth.types';
 import * as bcrypt from 'bcrypt';
 
@@ -22,8 +23,15 @@ describe('AuthService', () => {
   };
 
   beforeEach(async () => {
+    const mockMailService = { sendPasswordReset: jest.fn() };
     const module: TestingModule = await Test.createTestingModule({
-      providers: [AuthService, UserService, JwtService, PrismaService],
+      providers: [
+        AuthService,
+        UserService,
+        JwtService,
+        PrismaService,
+        { provide: MailService, useValue: mockMailService },
+      ],
     }).compile();
 
     service = module.get<AuthService>(AuthService);

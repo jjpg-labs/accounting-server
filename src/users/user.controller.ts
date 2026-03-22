@@ -13,6 +13,7 @@ import { Prisma, User } from '@prisma/client';
 import { Response } from 'express';
 import { Public } from '../auth/auth.guard';
 import { UserService } from './user.service';
+import { CreateUserDto } from './dto/create-user.dto';
 
 @Controller('user')
 export class UserController {
@@ -20,7 +21,7 @@ export class UserController {
 
   @Post()
   @Public()
-  async createUser(@Body() data: Prisma.UserCreateInput, @Res() res: Response) {
+  async createUser(@Body() data: CreateUserDto, @Res() res: Response) {
     try {
       const user = await this.userService.createUser(data);
       const status = user ? HttpStatus.CREATED : HttpStatus.BAD_REQUEST;

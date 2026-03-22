@@ -16,6 +16,7 @@ import { CategoriesModule } from './categories/categories.module';
 import { DailyReportsModule } from './dailyReports/dailyReports.module';
 import { SupplierModule } from './suppliers/supplier.module';
 import { UserModule } from './users/user.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { UserModule } from './users/user.module';
     DailyReportsModule,
     SupplierModule,
     UserModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [

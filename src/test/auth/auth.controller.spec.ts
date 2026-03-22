@@ -6,6 +6,7 @@ import { AuthController } from '../../auth/auth.controller';
 import { AuthService } from '../../auth/auth.service';
 import { PrismaService } from '../../services/prisma.service';
 import { UserService } from '../../users/user.service';
+import { MailService } from '../../mail/mail.service';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -13,9 +14,16 @@ describe('AuthController', () => {
   let mockResponse: Partial<Response>;
 
   beforeEach(async () => {
+    const mockMailService = { sendPasswordReset: jest.fn() };
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
-      providers: [AuthService, UserService, JwtService, PrismaService],
+      providers: [
+        AuthService,
+        UserService,
+        JwtService,
+        PrismaService,
+        { provide: MailService, useValue: mockMailService },
+      ],
     }).compile();
 
     controller = module.get<AuthController>(AuthController);

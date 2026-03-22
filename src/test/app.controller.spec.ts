@@ -1,14 +1,19 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppController } from '../app.controller';
 import { AppService } from '../app.service';
+import { MailService } from '../mail/mail.service';
 
 describe('AppController', () => {
   let appController: AppController;
 
   beforeEach(async () => {
+    const mockMailService = { sendContactMessage: jest.fn(), sendPasswordReset: jest.fn() };
     const app: TestingModule = await Test.createTestingModule({
       controllers: [AppController],
-      providers: [AppService],
+      providers: [
+        AppService,
+        { provide: MailService, useValue: mockMailService },
+      ],
     }).compile();
 
     appController = app.get<AppController>(AppController);
