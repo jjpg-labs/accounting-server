@@ -105,6 +105,48 @@ export class TransactionController {
     }
   }
 
+  @Get('metrics/monthly')
+  async getMonthlyMetrics(
+    @Query('accountingId') accountingId: number,
+    @Query('months') months: number,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    try {
+      const userId = req.user.sub;
+      const data = await this.transactionService.getMonthlyMetrics(
+        accountingId,
+        userId,
+        months ? Number(months) : 6,
+      );
+      res.status(HttpStatus.OK).json(data);
+    } catch {
+      res.status(HttpStatus.BAD_REQUEST).json({ message: 'Unknown error' });
+    }
+  }
+
+  @Get('category-breakdown')
+  async getCategoryBreakdown(
+    @Query('accountingId') accountingId: number,
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    try {
+      const userId = req.user.sub;
+      const data = await this.transactionService.getCategoryBreakdown(
+        accountingId,
+        userId,
+        startDate,
+        endDate,
+      );
+      res.status(HttpStatus.OK).json(data);
+    } catch {
+      res.status(HttpStatus.BAD_REQUEST).json({ message: 'Unknown error' });
+    }
+  }
+
   @Get('metrics')
   async getMetrics(
     @Query('accountingId') accountingId: number,

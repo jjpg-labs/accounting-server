@@ -120,6 +120,96 @@ export class TransactionService {
     }
   }
 
+  async getMonthlyMetrics(
+    accountingBookId: number,
+    userId: number,
+    months: number = 6,
+  ) {
+    try {
+      const results = [];
+      const now = new Date();
+
+      for (let i = months - 1; i >= 0; i--) {
+        const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const startDate = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+        const endDate = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0, 23, 59, 59);
+
+        const metrics = await this.getMetrics(
+          accountingBookId,
+          userId,
+          startDate.toISOString(),
+          endDate.toISOString(),
+        );
+
+        results.push({
+          month: `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, '0')}`,
+          totalIncome: metrics.totalIncome,
+          totalExpense: metrics.totalExpense,
+          net: metrics.netRevenue,
+        });
+      }
+
+      return results;
+    } catch (error) {
+      this.logger.error('Error fetching monthly metrics', error);
+      return [];
+    }
+  }
+
+  async getCategoryBreakdown(
+    accountingBookId: number,
+    userId: number,
+    startDate?: string,
+    endDate?: string,
+  ) {
+    try {
+      const where: Prisma.TransactionWhereInput = {
+        accountingBookId,
+        accountingBook: { userId },
+        type: 'EXPENSE',
+      };
+
+      if (startDate || endDate) {
+        where.valueDate = {};
+        if (startDate) where.valueDate.gte = new Date(startDate);
+        if (endDate) where.valueDate.lte = new Date(endDate);
+      }
+
+      const grouped = await this.prisma.transaction.groupBy({
+        by: ['categoryId'],
+        where,
+        _sum: { amount: true },
+        orderBy: { _sum: { amount: 'desc' } },
+      });
+
+      const categoryIds = grouped
+        .map((g) => g.categoryId)
+        .filter(Boolean) as number[];
+
+      const categories = await this.prisma.category.findMany({
+        where: { id: { in: categoryIds } },
+        select: { id: true, name: true },
+      });
+
+      const categoryMap = new Map(categories.map((c) => [c.id, c.name]));
+      const total = grouped.reduce(
+        (sum, g) => sum + Number(g._sum.amount || 0),
+        0,
+      );
+
+      return grouped.map((g) => ({
+        categoryName: g.categoryId
+          ? (categoryMap.get(g.categoryId) ?? 'Sin categoría')
+          : 'Sin categoría',
+        total: Number(g._sum.amount || 0),
+        percentage: total > 0 ? (Number(g._sum.amount || 0) / total) * 100 : 0,
+      }));
+    } catch (error) {
+      this.logger.error('Error fetching category breakdown', error);
+      return [];
+    }
+  }
+
   async exportToXlsx(
     accountingBookId: number,
     userId: number,
