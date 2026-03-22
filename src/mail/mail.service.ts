@@ -27,11 +27,40 @@ export class MailService {
     await this.mailerService.sendMail({
       to: email,
       subject: 'Restablecer contraseña — WealthWise',
-      template: 'password-reset',
-      context: {
-        resetUrl,
-        expiresInMinutes: 60,
-      },
+      html: `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Restablecer contraseña</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F8F9FB; margin: 0; padding: 40px 20px; }
+    .container { max-width: 480px; margin: 0 auto; background: #ffffff; border-radius: 16px; border: 1px solid #F1F1F1; padding: 40px; }
+    .logo-icon { width: 36px; height: 36px; background: #2B616D; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-style: italic; font-size: 18px; line-height: 36px; text-align: center; vertical-align: middle; margin-right: 10px; }
+    .logo-name { font-weight: 700; font-size: 20px; color: #1A1D1F; vertical-align: middle; }
+    h1 { font-size: 22px; font-weight: 700; color: #1A1D1F; margin: 32px 0 12px; }
+    p { font-size: 15px; color: #6F767E; line-height: 1.6; margin: 0 0 24px; }
+    .btn { display: inline-block; padding: 14px 28px; background: #2B616D; color: #ffffff; text-decoration: none; border-radius: 10px; font-weight: 600; font-size: 15px; }
+    .footer { margin-top: 32px; padding-top: 24px; border-top: 1px solid #F1F1F1; font-size: 13px; color: #6F767E; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div>
+      <span class="logo-icon">W</span>
+      <span class="logo-name">WealthWise</span>
+    </div>
+    <h1>Restablece tu contraseña</h1>
+    <p>Hemos recibido una solicitud para restablecer la contraseña de tu cuenta. Haz clic en el botón de abajo para continuar.</p>
+    <a href="${resetUrl}" class="btn">Restablecer contraseña</a>
+    <p style="font-size:13px;color:#6F767E;margin-top:24px;">Este enlace expirará en 60 minutos. Si no solicitaste este cambio, puedes ignorar este correo.</p>
+    <div class="footer">
+      Si tienes problemas con el botón, copia y pega este enlace en tu navegador:<br />
+      <span style="word-break:break-all;color:#2B616D;">${resetUrl}</span>
+    </div>
+  </div>
+</body>
+</html>`,
     });
   }
 }
