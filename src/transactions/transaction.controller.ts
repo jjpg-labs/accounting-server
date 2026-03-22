@@ -127,6 +127,33 @@ export class TransactionController {
     }
   }
 
+  @Get('export')
+  async exportTransactions(
+    @Query('accountingId') accountingId: number,
+    @Query('startDate') startDate: string,
+    @Query('endDate') endDate: string,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    try {
+      const userId = req.user.sub;
+      const buffer = await this.transactionService.exportToXlsx(
+        accountingId,
+        userId,
+        startDate,
+        endDate,
+      );
+      if (!buffer) {
+        return res.status(HttpStatus.NOT_FOUND).json({ message: 'Accounting book not found' });
+      }
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename="transactions.xlsx"`);
+      return res.status(HttpStatus.OK).send(buffer);
+    } catch {
+      res.status(HttpStatus.BAD_REQUEST).json({ message: 'Unknown error' });
+    }
+  }
+
   @Delete()
   async deleteTransaction(
     @Query('id') id: number,

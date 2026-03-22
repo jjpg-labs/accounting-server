@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Prisma, Transaction } from '@prisma/client';
 import { PrismaService } from '../services/prisma.service';
+import * as XLSX from 'xlsx';
 
 @Injectable()
 export class TransactionService {
@@ -117,6 +118,47 @@ export class TransactionService {
       this.logger.error('Error fetching metrics', error);
       return { totalIncome: 0, totalExpense: 0, netRevenue: 0 };
     }
+  }
+
+  async exportToXlsx(
+    accountingBookId: number,
+    userId: number,
+    startDate?: string,
+    endDate?: string,
+  ): Promise<Buffer | null> {
+    const book = await this.prisma.accountingBook.findFirst({
+      where: { id: accountingBookId, userId },
+      select: { id: true },
+    });
+    if (!book) return null;
+
+    const where: Prisma.TransactionWhereInput = { accountingBookId };
+    if (startDate || endDate) {
+      where.valueDate = {};
+      if (startDate) where.valueDate.gte = new Date(startDate);
+      if (endDate) where.valueDate.lte = new Date(endDate);
+    }
+
+    const transactions = await this.prisma.transaction.findMany({
+      where,
+      include: { category: true, supplier: true },
+      orderBy: { valueDate: 'asc' },
+    });
+
+    const rows = transactions.map((t) => ({
+      Date: new Date(t.valueDate).toISOString().slice(0, 10),
+      Description: t.description ?? '',
+      Type: t.type,
+      Amount: Number(t.amount),
+      PaymentMethod: t.paymentMethod ?? '',
+      Category: t.category?.name ?? '',
+      Supplier: t.supplier?.name ?? '',
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Transactions');
+    return XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
   }
 
   async delete(id: number, userId: number): Promise<Transaction | null> {
