@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Put, Req } from '@nestjs/common';
+import { Body, Controller, Delete, Get, NotFoundException, Param, ParseIntPipe, Post, Put, Req } from '@nestjs/common';
 import { NetWorthService } from './net-worth.service';
 import { CreateAssetDto } from './dto/create-asset.dto';
 import { CreateLiabilityDto } from './dto/create-liability.dto';
@@ -19,13 +19,17 @@ export class NetWorthController {
   }
 
   @Put('assets/:id')
-  updateAsset(@Req() req, @Param('id', ParseIntPipe) id: number, @Body() dto: Partial<CreateAssetDto>) {
-    return this.netWorthService.updateAsset(id, req.user.sub, dto);
+  async updateAsset(@Req() req, @Param('id', ParseIntPipe) id: number, @Body() dto: Partial<CreateAssetDto>) {
+    const result = await this.netWorthService.updateAsset(id, req.user.sub, dto);
+    if (!result) throw new NotFoundException('Asset not found');
+    return result;
   }
 
   @Delete('assets/:id')
-  removeAsset(@Req() req, @Param('id', ParseIntPipe) id: number) {
-    return this.netWorthService.removeAsset(id, req.user.sub);
+  async removeAsset(@Req() req, @Param('id', ParseIntPipe) id: number) {
+    const result = await this.netWorthService.removeAsset(id, req.user.sub);
+    if (!result) throw new NotFoundException('Asset not found');
+    return result;
   }
 
   // Liabilities
@@ -35,12 +39,16 @@ export class NetWorthController {
   }
 
   @Put('liabilities/:id')
-  updateLiability(@Req() req, @Param('id', ParseIntPipe) id: number, @Body() dto: Partial<CreateLiabilityDto>) {
-    return this.netWorthService.updateLiability(id, req.user.sub, dto);
+  async updateLiability(@Req() req, @Param('id', ParseIntPipe) id: number, @Body() dto: Partial<CreateLiabilityDto>) {
+    const result = await this.netWorthService.updateLiability(id, req.user.sub, dto);
+    if (!result) throw new NotFoundException('Liability not found');
+    return result;
   }
 
   @Delete('liabilities/:id')
-  removeLiability(@Req() req, @Param('id', ParseIntPipe) id: number) {
-    return this.netWorthService.removeLiability(id, req.user.sub);
+  async removeLiability(@Req() req, @Param('id', ParseIntPipe) id: number) {
+    const result = await this.netWorthService.removeLiability(id, req.user.sub);
+    if (!result) throw new NotFoundException('Liability not found');
+    return result;
   }
 }
