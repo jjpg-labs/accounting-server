@@ -13,7 +13,6 @@ export class DailyReportsService {
     payload: {
       closingBalance: string;
       cashLeftForNext?: string;
-      removedFromCash?: string;
       notes?: string;
     },
   ) {
@@ -23,6 +22,19 @@ export class DailyReportsService {
     if (!book) return null;
 
     const d = new Date(date);
+
+    // Determine openingBalance from previous day's cashLeftForNext
+    const previousReport = await this.prisma.dailyReport.findFirst({
+      where: {
+        accountingBookId,
+        date: { lt: d },
+        accountingBook: { userId },
+      },
+      orderBy: { date: 'desc' },
+    });
+    const openingBalance = previousReport
+      ? previousReport.cashLeftForNext.toString()
+      : '0.00';
 
     const income = await this.prisma.transaction.aggregate({
       _sum: { amount: true },
@@ -54,32 +66,43 @@ export class DailyReportsService {
       expense._sum.amount || new Prisma.Decimal(0)
     ).toString();
 
+    // Auto-calculate removedFromCash and reconciliation
+    const cashLeftForNext = Number(payload.cashLeftForNext || '0.00');
+    const closingBalance = Number(payload.closingBalance);
+    const removedFromCash = closingBalance - cashLeftForNext;
+
+    const expectedClosing =
+      Number(openingBalance) + Number(totalIncome) - Number(totalExpense);
+    const reconciled = Math.abs(closingBalance - expectedClosing) <= 0.01;
+    const discrepancy = closingBalance - expectedClosing;
+
     const upsert = await this.prisma.dailyReport.upsert({
       where: { accountingBookId_date: { accountingBookId, date: d } as any },
       create: {
         accountingBookId,
         date: d,
-        openingBalance: new Prisma.Decimal('0.00'),
+        openingBalance: new Prisma.Decimal(openingBalance),
         totalIncome: new Prisma.Decimal(totalIncome),
         totalExpense: new Prisma.Decimal(totalExpense),
         closingBalance: new Prisma.Decimal(payload.closingBalance),
-        cashLeftForNext: new Prisma.Decimal(payload.cashLeftForNext || '0.00'),
-        removedFromCash: new Prisma.Decimal(payload.removedFromCash || '0.00'),
+        cashLeftForNext: new Prisma.Decimal(cashLeftForNext.toFixed(2)),
+        removedFromCash: new Prisma.Decimal(removedFromCash.toFixed(2)),
         notes: payload.notes,
-        reconciled: true,
+        reconciled,
       },
       update: {
+        openingBalance: new Prisma.Decimal(openingBalance),
         totalIncome: new Prisma.Decimal(totalIncome),
         totalExpense: new Prisma.Decimal(totalExpense),
         closingBalance: new Prisma.Decimal(payload.closingBalance),
-        cashLeftForNext: new Prisma.Decimal(payload.cashLeftForNext || '0.00'),
-        removedFromCash: new Prisma.Decimal(payload.removedFromCash || '0.00'),
+        cashLeftForNext: new Prisma.Decimal(cashLeftForNext.toFixed(2)),
+        removedFromCash: new Prisma.Decimal(removedFromCash.toFixed(2)),
         notes: payload.notes,
-        reconciled: true,
+        reconciled,
       },
     });
 
-    return upsert;
+    return { ...upsert, discrepancy };
   }
 
   async getReport(accountingBookId: number, date: string, userId: number) {

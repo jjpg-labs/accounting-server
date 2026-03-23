@@ -56,7 +56,6 @@ export class DailyReportsController {
       date: string;
       closingBalance: string;
       cashLeftForNext?: string;
-      removedFromCash?: string;
       notes?: string;
     },
     @Req() req: Request,
