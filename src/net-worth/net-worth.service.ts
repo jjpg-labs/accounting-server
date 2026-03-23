@@ -72,14 +72,27 @@ export class NetWorthService {
 
   // Summary
   async getSummary(userId: number) {
-    const [assets, liabilities] = await Promise.all([
+    const [assets, liabilities, investmentPositions] = await Promise.all([
       this.prisma.asset.findMany({ where: { userId }, orderBy: { category: 'asc' } }),
       this.prisma.liability.findMany({ where: { userId }, orderBy: { category: 'asc' } }),
+      this.prisma.investmentPosition.findMany({ where: { userId } }),
     ]);
 
     const totalAssets = assets.reduce((s, a) => s + Number(a.value), 0);
     const totalLiabilities = liabilities.reduce((s, l) => s + Number(l.amount), 0);
+    const investmentTotal = investmentPositions.reduce(
+      (s, p) => s + Number(p.currentPrice) * Number(p.shares),
+      0,
+    );
+    const grandTotalAssets = totalAssets + investmentTotal;
 
-    return { totalAssets, totalLiabilities, netWorth: totalAssets - totalLiabilities, assets, liabilities };
+    return {
+      totalAssets: grandTotalAssets,
+      totalLiabilities,
+      netWorth: grandTotalAssets - totalLiabilities,
+      assets,
+      liabilities,
+      investmentTotal,
+    };
   }
 }

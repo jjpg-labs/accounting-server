@@ -19,6 +19,7 @@ import { UserModule } from './users/user.module';
 import { MailModule } from './mail/mail.module';
 import { SavingsGoalsModule } from './savings-goals/savings-goals.module';
 import { NetWorthModule } from './net-worth/net-worth.module';
+import { InvestmentsModule } from './investments/investments.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { NetWorthModule } from './net-worth/net-worth.module';
     MailModule,
     SavingsGoalsModule,
     NetWorthModule,
+    InvestmentsModule,
   ],
   controllers: [AppController],
   providers: [

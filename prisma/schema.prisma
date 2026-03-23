@@ -25,6 +25,7 @@ model User {
   savingsGoals          SavingsGoal[]
   assets                Asset[]
   liabilities           Liability[]
+  investmentPositions   InvestmentPosition[]
 }
 
 model RefreshToken {
@@ -220,6 +221,22 @@ model Liability {
   createdAt DateTime          @default(now())
   updatedAt DateTime          @updatedAt
   user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model InvestmentPosition {
+  id           Int      @id @default(autoincrement())
+  name         String
+  ticker       String
+  shares       Decimal  @db.Decimal(14, 6)
+  currentPrice Decimal  @db.Decimal(14, 4)
+  currency     String   @default("EUR")
+  notes        String?
+  userId       Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
