@@ -64,6 +64,7 @@ model AccountingBook {
   dailyReports          DailyReport[]
   recurringTransactions RecurringTransaction[]
   transactions          Transaction[]
+  vatEntries            VatEntry[]
 
   @@unique([userId, name], map: "AccountingBook_userId_name_unique")
   @@index([userId])
@@ -239,6 +240,21 @@ model InvestmentPosition {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+model VatEntry {
+  id               Int            @id @default(autoincrement())
+  accountingBookId Int
+  date             DateTime
+  vat21            Decimal        @default(0.00) @db.Decimal(14, 2)
+  vat10            Decimal        @default(0.00) @db.Decimal(14, 2)
+  vat4             Decimal        @default(0.00) @db.Decimal(14, 2)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  accountingBook   AccountingBook @relation(fields: [accountingBookId], references: [id], onDelete: Cascade)
+
+  @@unique([accountingBookId, date], map: "VatEntry_book_date_unique")
+  @@index([accountingBookId])
 }
 
 enum AssetCategory {

@@ -20,6 +20,7 @@ import { MailModule } from './mail/mail.module';
 import { SavingsGoalsModule } from './savings-goals/savings-goals.module';
 import { NetWorthModule } from './net-worth/net-worth.module';
 import { InvestmentsModule } from './investments/investments.module';
+import { VatEntriesModule } from './vat-entries/vat-entries.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { InvestmentsModule } from './investments/investments.module';
     PeriodicModule,
     CategoriesModule,
     DailyReportsModule,
+    VatEntriesModule,
     SupplierModule,
     UserModule,
     MailModule,
