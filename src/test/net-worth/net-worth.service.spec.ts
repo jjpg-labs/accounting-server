@@ -4,6 +4,10 @@ import { NetWorthService } from '../../net-worth/net-worth.service';
 import { PrismaService } from '../../services/prisma.service';
 
 const mockPrismaService = {
+  accountingBook: {
+    findFirst: jest.fn(),
+    findMany: jest.fn(),
+  },
   asset: {
     create: jest.fn(),
     findMany: jest.fn(),
@@ -17,6 +21,16 @@ const mockPrismaService = {
     findFirst: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
+  },
+  investmentPosition: {
+    findMany: jest.fn(),
+  },
+  account: {
+    findMany: jest.fn(),
+  },
+  transaction: {
+    groupBy: jest.fn(),
+    aggregate: jest.fn(),
   },
 };
 
@@ -41,32 +55,27 @@ describe('NetWorthService', () => {
 
   // Assets
   describe('createAsset', () => {
-    it('should create an asset', async () => {
+    it('should create an asset when book belongs to user', async () => {
       const dto = { name: 'Cuenta corriente', value: '5000', category: 'CASH' };
-      const created = { id: 1, userId: 1, ...dto, value: new Prisma.Decimal('5000') };
+      const created = { id: 1, userId: 1, accountingBookId: 10, ...dto, value: new Prisma.Decimal('5000') };
+      mockPrismaService.accountingBook.findFirst.mockResolvedValue({ id: 10 });
       mockPrismaService.asset.create.mockResolvedValue(created);
 
-      const result = await service.createAsset(1, dto as any);
+      const result = await service.createAsset(1, 10, dto as any);
 
       expect(result).toEqual(created);
       expect(mockPrismaService.asset.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({ userId: 1, name: 'Cuenta corriente', category: 'CASH' }),
+        data: expect.objectContaining({ userId: 1, accountingBookId: 10, name: 'Cuenta corriente', category: 'CASH' }),
       });
     });
-  });
 
-  describe('findAllAssets', () => {
-    it('should return assets ordered by category', async () => {
-      const assets = [{ id: 1 }, { id: 2 }];
-      mockPrismaService.asset.findMany.mockResolvedValue(assets);
+    it('should return null if book does not belong to user', async () => {
+      mockPrismaService.accountingBook.findFirst.mockResolvedValue(null);
 
-      const result = await service.findAllAssets(1);
+      const result = await service.createAsset(999, 10, { name: 'X', value: '100', category: 'CASH' } as any);
 
-      expect(result).toEqual(assets);
-      expect(mockPrismaService.asset.findMany).toHaveBeenCalledWith({
-        where: { userId: 1 },
-        orderBy: { category: 'asc' },
-      });
+      expect(result).toBeNull();
+      expect(mockPrismaService.asset.create).not.toHaveBeenCalled();
     });
   });
 
@@ -113,32 +122,27 @@ describe('NetWorthService', () => {
 
   // Liabilities
   describe('createLiability', () => {
-    it('should create a liability', async () => {
+    it('should create a liability when book belongs to user', async () => {
       const dto = { name: 'Hipoteca', amount: '120000', category: 'MORTGAGE' };
-      const created = { id: 1, userId: 1, ...dto, amount: new Prisma.Decimal('120000') };
+      const created = { id: 1, userId: 1, accountingBookId: 10, ...dto, amount: new Prisma.Decimal('120000') };
+      mockPrismaService.accountingBook.findFirst.mockResolvedValue({ id: 10 });
       mockPrismaService.liability.create.mockResolvedValue(created);
 
-      const result = await service.createLiability(1, dto as any);
+      const result = await service.createLiability(1, 10, dto as any);
 
       expect(result).toEqual(created);
       expect(mockPrismaService.liability.create).toHaveBeenCalledWith({
-        data: expect.objectContaining({ userId: 1, name: 'Hipoteca', category: 'MORTGAGE' }),
+        data: expect.objectContaining({ userId: 1, accountingBookId: 10, name: 'Hipoteca', category: 'MORTGAGE' }),
       });
     });
-  });
 
-  describe('findAllLiabilities', () => {
-    it('should return liabilities ordered by category', async () => {
-      const liabilities = [{ id: 1 }];
-      mockPrismaService.liability.findMany.mockResolvedValue(liabilities);
+    it('should return null if book does not belong to user', async () => {
+      mockPrismaService.accountingBook.findFirst.mockResolvedValue(null);
 
-      const result = await service.findAllLiabilities(1);
+      const result = await service.createLiability(999, 10, { name: 'X', amount: '100', category: 'MORTGAGE' } as any);
 
-      expect(result).toEqual(liabilities);
-      expect(mockPrismaService.liability.findMany).toHaveBeenCalledWith({
-        where: { userId: 1 },
-        orderBy: { category: 'asc' },
-      });
+      expect(result).toBeNull();
+      expect(mockPrismaService.liability.create).not.toHaveBeenCalled();
     });
   });
 
@@ -182,40 +186,69 @@ describe('NetWorthService', () => {
 
   // Summary
   describe('getSummary', () => {
+    beforeEach(() => {
+      // Default: no accounts
+      mockPrismaService.account.findMany.mockResolvedValue([]);
+    });
+
     it('should compute totals and net worth correctly', async () => {
       const assets = [
         { id: 1, value: new Prisma.Decimal('5000') },
         { id: 2, value: new Prisma.Decimal('15000') },
       ];
       const liabilities = [{ id: 1, amount: new Prisma.Decimal('8000') }];
+      const investments = [{ currentPrice: new Prisma.Decimal('100'), shares: new Prisma.Decimal('10') }];
       mockPrismaService.asset.findMany.mockResolvedValue(assets);
       mockPrismaService.liability.findMany.mockResolvedValue(liabilities);
+      mockPrismaService.investmentPosition.findMany.mockResolvedValue(investments);
 
-      const result = await service.getSummary(1);
+      const result = await service.getSummary(10, 1);
 
-      expect(result.totalAssets).toBe(20000);
+      expect(result.totalAssets).toBe(21000); // 20000 assets + 1000 investments
       expect(result.totalLiabilities).toBe(8000);
-      expect(result.netWorth).toBe(12000);
+      expect(result.netWorth).toBe(13000);
+      expect(result.investmentTotal).toBe(1000);
+      expect(result.accountsTotal).toBe(0);
       expect(result.assets).toEqual(assets);
       expect(result.liabilities).toEqual(liabilities);
     });
 
-    it('should return zeros when user has no assets or liabilities', async () => {
+    it('should return zeros when book has no assets, liabilities or investments', async () => {
       mockPrismaService.asset.findMany.mockResolvedValue([]);
       mockPrismaService.liability.findMany.mockResolvedValue([]);
+      mockPrismaService.investmentPosition.findMany.mockResolvedValue([]);
 
-      const result = await service.getSummary(1);
+      const result = await service.getSummary(10, 1);
 
-      expect(result).toEqual({ totalAssets: 0, totalLiabilities: 0, netWorth: 0, assets: [], liabilities: [] });
+      expect(result).toEqual({ totalAssets: 0, totalLiabilities: 0, netWorth: 0, assets: [], liabilities: [], investmentTotal: 0, accounts: [], accountsTotal: 0 });
     });
 
     it('should return negative net worth when liabilities exceed assets', async () => {
       mockPrismaService.asset.findMany.mockResolvedValue([{ value: new Prisma.Decimal('1000') }]);
       mockPrismaService.liability.findMany.mockResolvedValue([{ amount: new Prisma.Decimal('5000') }]);
+      mockPrismaService.investmentPosition.findMany.mockResolvedValue([]);
 
-      const result = await service.getSummary(1);
+      const result = await service.getSummary(10, 1);
 
       expect(result.netWorth).toBe(-4000);
+    });
+
+    it('should include account balances in totalAssets', async () => {
+      mockPrismaService.asset.findMany.mockResolvedValue([]);
+      mockPrismaService.liability.findMany.mockResolvedValue([]);
+      mockPrismaService.investmentPosition.findMany.mockResolvedValue([]);
+      mockPrismaService.account.findMany.mockResolvedValue([
+        { id: 1, name: 'ING', startingBalance: new Prisma.Decimal('1000') },
+      ]);
+      mockPrismaService.transaction.groupBy.mockResolvedValue([
+        { type: 'INCOME', _sum: { amount: new Prisma.Decimal('500') } },
+      ]);
+      mockPrismaService.transaction.aggregate.mockResolvedValue({ _sum: { amount: null } });
+
+      const result = await service.getSummary(10, 1);
+
+      expect(result.accountsTotal).toBe(1500); // 1000 starting + 500 income
+      expect(result.totalAssets).toBe(1500);
     });
   });
 });

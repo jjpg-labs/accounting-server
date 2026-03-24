@@ -33,6 +33,8 @@ describe('TransactionController', () => {
     paymentMethod: null,
     dailyReportId: null,
     valueDate: new Date(),
+    accountId: null,
+    toAccountId: null,
     ...overrides,
   });
 

@@ -6,6 +6,7 @@ import { NetWorthService } from '../../net-worth/net-worth.service';
 
 const mockNetWorthService = {
   getSummary: jest.fn(),
+  getGlobalSummary: jest.fn(),
   createAsset: jest.fn(),
   updateAsset: jest.fn(),
   removeAsset: jest.fn(),
@@ -15,6 +16,7 @@ const mockNetWorthService = {
 };
 
 const mockRequest = { user: { sub: 1 } };
+const BOOK_ID = 10;
 
 describe('NetWorthController', () => {
   let controller: NetWorthController;
@@ -37,12 +39,22 @@ describe('NetWorthController', () => {
   });
 
   describe('getSummary', () => {
-    it('should return the net worth summary', async () => {
-      const summary = { totalAssets: 20000, totalLiabilities: 8000, netWorth: 12000, assets: [], liabilities: [] };
+    it('should return the net worth summary for the book', async () => {
+      const summary = { totalAssets: 20000, totalLiabilities: 8000, netWorth: 12000, assets: [], liabilities: [], investmentTotal: 0 };
       mockNetWorthService.getSummary.mockResolvedValue(summary);
 
-      expect(await controller.getSummary(mockRequest as any)).toEqual(summary);
-      expect(mockNetWorthService.getSummary).toHaveBeenCalledWith(1);
+      expect(await controller.getSummary(mockRequest as any, BOOK_ID)).toEqual(summary);
+      expect(mockNetWorthService.getSummary).toHaveBeenCalledWith(BOOK_ID, 1);
+    });
+  });
+
+  describe('getGlobalSummary', () => {
+    it('should return the global net worth summary', async () => {
+      const summary = { totalAssets: 30000, totalLiabilities: 10000, netWorth: 20000, investmentTotal: 5000, books: [] };
+      mockNetWorthService.getGlobalSummary.mockResolvedValue(summary);
+
+      expect(await controller.getGlobalSummary(mockRequest as any)).toEqual(summary);
+      expect(mockNetWorthService.getGlobalSummary).toHaveBeenCalledWith(1);
     });
   });
 
@@ -52,10 +64,16 @@ describe('NetWorthController', () => {
       const dto = { name: 'Cuenta', value: '5000', category: 'CASH' };
       mockNetWorthService.createAsset.mockResolvedValue({ id: 1, ...dto });
 
-      const result = await controller.createAsset(mockRequest as any, dto as any);
+      const result = await controller.createAsset(mockRequest as any, dto as any, BOOK_ID);
 
       expect(result).toEqual({ id: 1, ...dto });
-      expect(mockNetWorthService.createAsset).toHaveBeenCalledWith(1, dto);
+      expect(mockNetWorthService.createAsset).toHaveBeenCalledWith(1, BOOK_ID, dto);
+    });
+
+    it('should throw NotFoundException when book not found', async () => {
+      mockNetWorthService.createAsset.mockResolvedValue(null);
+
+      await expect(controller.createAsset(mockRequest as any, {} as any, BOOK_ID)).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -98,10 +116,16 @@ describe('NetWorthController', () => {
       const dto = { name: 'Hipoteca', amount: '120000', category: 'MORTGAGE' };
       mockNetWorthService.createLiability.mockResolvedValue({ id: 1, ...dto });
 
-      const result = await controller.createLiability(mockRequest as any, dto as any);
+      const result = await controller.createLiability(mockRequest as any, dto as any, BOOK_ID);
 
       expect(result).toEqual({ id: 1, ...dto });
-      expect(mockNetWorthService.createLiability).toHaveBeenCalledWith(1, dto);
+      expect(mockNetWorthService.createLiability).toHaveBeenCalledWith(1, BOOK_ID, dto);
+    });
+
+    it('should throw NotFoundException when book not found', async () => {
+      mockNetWorthService.createLiability.mockResolvedValue(null);
+
+      await expect(controller.createLiability(mockRequest as any, {} as any, BOOK_ID)).rejects.toThrow(NotFoundException);
     });
   });
 

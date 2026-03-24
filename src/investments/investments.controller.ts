@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, NotFoundException, Param, ParseIntPipe, Post, Put, Req } from '@nestjs/common';
+import { Body, Controller, Delete, Get, NotFoundException, Param, ParseIntPipe, Post, Put, Query, Req } from '@nestjs/common';
 import { InvestmentsService } from './investments.service';
 import { CreateInvestmentDto } from './dto/create-investment.dto';
 
@@ -6,14 +6,21 @@ import { CreateInvestmentDto } from './dto/create-investment.dto';
 export class InvestmentsController {
   constructor(private readonly investmentsService: InvestmentsService) {}
 
+  @Get('global')
+  findAllGlobal(@Req() req) {
+    return this.investmentsService.findAllGlobal(req.user.sub);
+  }
+
   @Get()
-  findAll(@Req() req) {
-    return this.investmentsService.findAll(req.user.sub);
+  findAll(@Req() req, @Query('bookId', ParseIntPipe) bookId: number) {
+    return this.investmentsService.findAll(bookId, req.user.sub);
   }
 
   @Post()
-  create(@Req() req, @Body() dto: CreateInvestmentDto) {
-    return this.investmentsService.create(req.user.sub, dto);
+  async create(@Req() req, @Body() dto: CreateInvestmentDto, @Query('bookId', ParseIntPipe) bookId: number) {
+    const result = await this.investmentsService.create(req.user.sub, bookId, dto);
+    if (!result) throw new NotFoundException('Accounting book not found');
+    return result;
   }
 
   @Put(':id')
@@ -31,7 +38,7 @@ export class InvestmentsController {
   }
 
   @Post('refresh-prices')
-  refreshPrices(@Req() req) {
-    return this.investmentsService.refreshPrices(req.user.sub);
+  refreshPrices(@Req() req, @Query('bookId', ParseIntPipe) bookId: number) {
+    return this.investmentsService.refreshPrices(bookId, req.user.sub);
   }
 }

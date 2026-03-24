@@ -21,6 +21,7 @@ import { SavingsGoalsModule } from './savings-goals/savings-goals.module';
 import { NetWorthModule } from './net-worth/net-worth.module';
 import { InvestmentsModule } from './investments/investments.module';
 import { VatEntriesModule } from './vat-entries/vat-entries.module';
+import { AccountsModule } from './accounts/accounts.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { VatEntriesModule } from './vat-entries/vat-entries.module';
     SavingsGoalsModule,
     NetWorthModule,
     InvestmentsModule,
+    AccountsModule,
   ],
   controllers: [AppController],
   providers: [

@@ -19,6 +19,24 @@ export class TransactionService {
       });
       if (!book) return null;
 
+      // Validate accountId belongs to the same book
+      if (data.accountId) {
+        const account = await this.prisma.account.findFirst({
+          where: { id: data.accountId as number, accountingBookId: book.id },
+          select: { id: true },
+        });
+        if (!account) return null;
+      }
+
+      // Validate toAccountId for transfers
+      if (data.toAccountId) {
+        const toAccount = await this.prisma.account.findFirst({
+          where: { id: data.toAccountId as number, accountingBookId: book.id },
+          select: { id: true },
+        });
+        if (!toAccount) return null;
+      }
+
       return await this.prisma.transaction.create({ data });
     } catch (error) {
       this.logger.error('Error creating transaction', error);

@@ -9,18 +9,19 @@ export class NetWorthService {
   constructor(private prisma: PrismaService) {}
 
   // Assets
-  async createAsset(userId: number, dto: CreateAssetDto) {
+  async createAsset(userId: number, accountingBookId: number, dto: CreateAssetDto) {
+    const book = await this.prisma.accountingBook.findFirst({
+      where: { id: accountingBookId, userId },
+      select: { id: true },
+    });
+    if (!book) return null;
     return this.prisma.asset.create({
-      data: { userId, name: dto.name, value: new Prisma.Decimal(dto.value), category: dto.category, notes: dto.notes },
+      data: { userId, accountingBookId, name: dto.name, value: new Prisma.Decimal(dto.value), category: dto.category, notes: dto.notes },
     });
   }
 
-  async findAllAssets(userId: number) {
-    return this.prisma.asset.findMany({ where: { userId }, orderBy: { category: 'asc' } });
-  }
-
   async updateAsset(id: number, userId: number, dto: Partial<CreateAssetDto>) {
-    const asset = await this.prisma.asset.findFirst({ where: { id, userId } });
+    const asset = await this.prisma.asset.findFirst({ where: { id, accountingBook: { userId } } });
     if (!asset) return null;
     return this.prisma.asset.update({
       where: { id },
@@ -34,24 +35,25 @@ export class NetWorthService {
   }
 
   async removeAsset(id: number, userId: number) {
-    const asset = await this.prisma.asset.findFirst({ where: { id, userId } });
+    const asset = await this.prisma.asset.findFirst({ where: { id, accountingBook: { userId } } });
     if (!asset) return null;
     return this.prisma.asset.delete({ where: { id } });
   }
 
   // Liabilities
-  async createLiability(userId: number, dto: CreateLiabilityDto) {
+  async createLiability(userId: number, accountingBookId: number, dto: CreateLiabilityDto) {
+    const book = await this.prisma.accountingBook.findFirst({
+      where: { id: accountingBookId, userId },
+      select: { id: true },
+    });
+    if (!book) return null;
     return this.prisma.liability.create({
-      data: { userId, name: dto.name, amount: new Prisma.Decimal(dto.amount), category: dto.category, notes: dto.notes },
+      data: { userId, accountingBookId, name: dto.name, amount: new Prisma.Decimal(dto.amount), category: dto.category, notes: dto.notes },
     });
   }
 
-  async findAllLiabilities(userId: number) {
-    return this.prisma.liability.findMany({ where: { userId }, orderBy: { category: 'asc' } });
-  }
-
   async updateLiability(id: number, userId: number, dto: Partial<CreateLiabilityDto>) {
-    const liability = await this.prisma.liability.findFirst({ where: { id, userId } });
+    const liability = await this.prisma.liability.findFirst({ where: { id, accountingBook: { userId } } });
     if (!liability) return null;
     return this.prisma.liability.update({
       where: { id },
@@ -65,18 +67,21 @@ export class NetWorthService {
   }
 
   async removeLiability(id: number, userId: number) {
-    const liability = await this.prisma.liability.findFirst({ where: { id, userId } });
+    const liability = await this.prisma.liability.findFirst({ where: { id, accountingBook: { userId } } });
     if (!liability) return null;
     return this.prisma.liability.delete({ where: { id } });
   }
 
-  // Summary
-  async getSummary(userId: number) {
-    const [assets, liabilities, investmentPositions] = await Promise.all([
-      this.prisma.asset.findMany({ where: { userId }, orderBy: { category: 'asc' } }),
-      this.prisma.liability.findMany({ where: { userId }, orderBy: { category: 'asc' } }),
-      this.prisma.investmentPosition.findMany({ where: { userId } }),
+  // Summary per book
+  async getSummary(accountingBookId: number, userId: number) {
+    const [assets, liabilities, investmentPositions, rawAccounts] = await Promise.all([
+      this.prisma.asset.findMany({ where: { accountingBookId, accountingBook: { userId } }, orderBy: { category: 'asc' } }),
+      this.prisma.liability.findMany({ where: { accountingBookId, accountingBook: { userId } }, orderBy: { category: 'asc' } }),
+      this.prisma.investmentPosition.findMany({ where: { accountingBookId, accountingBook: { userId } } }),
+      this.prisma.account.findMany({ where: { accountingBookId, accountingBook: { userId } }, orderBy: { createdAt: 'asc' } }),
     ]);
+
+    const accounts = await Promise.all(rawAccounts.map((acc) => this.calcAccountBalance(acc)));
 
     const totalAssets = assets.reduce((s, a) => s + Number(a.value), 0);
     const totalLiabilities = liabilities.reduce((s, l) => s + Number(l.amount), 0);
@@ -84,7 +89,8 @@ export class NetWorthService {
       (s, p) => s + Number(p.currentPrice) * Number(p.shares),
       0,
     );
-    const grandTotalAssets = totalAssets + investmentTotal;
+    const accountsTotal = accounts.reduce((s, a) => s + a.balance, 0);
+    const grandTotalAssets = totalAssets + investmentTotal + accountsTotal;
 
     return {
       totalAssets: grandTotalAssets,
@@ -93,6 +99,86 @@ export class NetWorthService {
       assets,
       liabilities,
       investmentTotal,
+      accounts,
+      accountsTotal,
+    };
+  }
+
+  private async calcAccountBalance(account: { id: number; startingBalance: any; [key: string]: any }) {
+    const [incomeExpense, transferOut, transferIn] = await Promise.all([
+      this.prisma.transaction.groupBy({
+        by: ['type'],
+        where: { accountId: account.id, type: { in: ['INCOME', 'EXPENSE'] } },
+        _sum: { amount: true },
+      }),
+      this.prisma.transaction.aggregate({
+        where: { accountId: account.id, type: 'TRANSFER' },
+        _sum: { amount: true },
+      }),
+      this.prisma.transaction.aggregate({
+        where: { toAccountId: account.id, type: 'TRANSFER' },
+        _sum: { amount: true },
+      }),
+    ]);
+
+    const income = Number(incomeExpense.find((r) => r.type === 'INCOME')?._sum?.amount ?? 0);
+    const expense = Number(incomeExpense.find((r) => r.type === 'EXPENSE')?._sum?.amount ?? 0);
+    const outgoing = Number(transferOut._sum?.amount ?? 0);
+    const incoming = Number(transferIn._sum?.amount ?? 0);
+    const balance = Number(account.startingBalance) + income - expense + incoming - outgoing;
+
+    return { ...account, balance };
+  }
+
+  // Global summary across all books
+  async getGlobalSummary(userId: number) {
+    const books = await this.prisma.accountingBook.findMany({
+      where: { userId },
+      select: { id: true, name: true },
+    });
+
+    const bookSummaries = await Promise.all(
+      books.map(async (book) => {
+        const [assets, liabilities, investmentPositions] = await Promise.all([
+          this.prisma.asset.findMany({ where: { accountingBookId: book.id } }),
+          this.prisma.liability.findMany({ where: { accountingBookId: book.id } }),
+          this.prisma.investmentPosition.findMany({ where: { accountingBookId: book.id } }),
+        ]);
+
+        const rawAccounts = await this.prisma.account.findMany({ where: { accountingBookId: book.id } });
+        const accounts = await Promise.all(rawAccounts.map((acc) => this.calcAccountBalance(acc)));
+        const accountsTotal = accounts.reduce((s, a) => s + a.balance, 0);
+
+        const totalAssets = assets.reduce((s, a) => s + Number(a.value), 0);
+        const totalLiabilities = liabilities.reduce((s, l) => s + Number(l.amount), 0);
+        const investmentTotal = investmentPositions.reduce(
+          (s, p) => s + Number(p.currentPrice) * Number(p.shares),
+          0,
+        );
+        const grandTotalAssets = totalAssets + investmentTotal + accountsTotal;
+
+        return {
+          bookId: book.id,
+          bookName: book.name,
+          totalAssets: grandTotalAssets,
+          totalLiabilities,
+          investmentTotal,
+          accountsTotal,
+          netWorth: grandTotalAssets - totalLiabilities,
+        };
+      }),
+    );
+
+    const totalAssets = bookSummaries.reduce((s, b) => s + b.totalAssets, 0);
+    const totalLiabilities = bookSummaries.reduce((s, b) => s + b.totalLiabilities, 0);
+    const investmentTotal = bookSummaries.reduce((s, b) => s + b.investmentTotal, 0);
+
+    return {
+      totalAssets,
+      totalLiabilities,
+      investmentTotal,
+      netWorth: totalAssets - totalLiabilities,
+      books: bookSummaries,
     };
   }
 }

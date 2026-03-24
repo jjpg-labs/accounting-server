@@ -7,9 +7,9 @@ import { CreateInvestmentDto } from './dto/create-investment.dto';
 export class InvestmentsService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(userId: number) {
+  async findAll(accountingBookId: number, userId: number) {
     const positions = await this.prisma.investmentPosition.findMany({
-      where: { userId },
+      where: { accountingBookId, accountingBook: { userId } },
       orderBy: { createdAt: 'asc' },
     });
     const totalValue = positions.reduce(
@@ -19,10 +19,29 @@ export class InvestmentsService {
     return { positions, totalValue };
   }
 
-  async create(userId: number, dto: CreateInvestmentDto) {
+  async findAllGlobal(userId: number) {
+    const positions = await this.prisma.investmentPosition.findMany({
+      where: { accountingBook: { userId } },
+      orderBy: { createdAt: 'asc' },
+      include: { accountingBook: { select: { id: true, name: true } } },
+    });
+    const totalValue = positions.reduce(
+      (sum, p) => sum + Number(p.currentPrice) * Number(p.shares),
+      0,
+    );
+    return { positions, totalValue };
+  }
+
+  async create(userId: number, accountingBookId: number, dto: CreateInvestmentDto) {
+    const book = await this.prisma.accountingBook.findFirst({
+      where: { id: accountingBookId, userId },
+      select: { id: true },
+    });
+    if (!book) return null;
     return this.prisma.investmentPosition.create({
       data: {
         userId,
+        accountingBookId,
         name: dto.name,
         ticker: dto.ticker,
         shares: new Prisma.Decimal(dto.shares),
@@ -34,7 +53,9 @@ export class InvestmentsService {
   }
 
   async update(id: number, userId: number, dto: Partial<CreateInvestmentDto>) {
-    const position = await this.prisma.investmentPosition.findFirst({ where: { id, userId } });
+    const position = await this.prisma.investmentPosition.findFirst({
+      where: { id, accountingBook: { userId } },
+    });
     if (!position) return null;
     return this.prisma.investmentPosition.update({
       where: { id },
@@ -50,13 +71,17 @@ export class InvestmentsService {
   }
 
   async remove(id: number, userId: number) {
-    const position = await this.prisma.investmentPosition.findFirst({ where: { id, userId } });
+    const position = await this.prisma.investmentPosition.findFirst({
+      where: { id, accountingBook: { userId } },
+    });
     if (!position) return null;
     return this.prisma.investmentPosition.delete({ where: { id } });
   }
 
-  async refreshPrices(userId: number) {
-    const positions = await this.prisma.investmentPosition.findMany({ where: { userId } });
+  async refreshPrices(accountingBookId: number, userId: number) {
+    const positions = await this.prisma.investmentPosition.findMany({
+      where: { accountingBookId, accountingBook: { userId } },
+    });
     const results = await Promise.allSettled(
       positions.map(async (pos) => {
         const price = await this.fetchPrice(pos.ticker);
@@ -70,7 +95,7 @@ export class InvestmentsService {
     );
     // Return updated positions regardless of individual failures
     void results;
-    return this.findAll(userId);
+    return this.findAll(accountingBookId, userId);
   }
 
   private async fetchPrice(ticker: string): Promise<number | null> {

@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, NotFoundException, Param, ParseIntPipe, Post, Put, Req } from '@nestjs/common';
+import { Body, Controller, Delete, Get, NotFoundException, Param, ParseIntPipe, Post, Put, Query, Req } from '@nestjs/common';
 import { NetWorthService } from './net-worth.service';
 import { CreateAssetDto } from './dto/create-asset.dto';
 import { CreateLiabilityDto } from './dto/create-liability.dto';
@@ -7,15 +7,22 @@ import { CreateLiabilityDto } from './dto/create-liability.dto';
 export class NetWorthController {
   constructor(private readonly netWorthService: NetWorthService) {}
 
+  @Get('global')
+  getGlobalSummary(@Req() req) {
+    return this.netWorthService.getGlobalSummary(req.user.sub);
+  }
+
   @Get()
-  getSummary(@Req() req) {
-    return this.netWorthService.getSummary(req.user.sub);
+  getSummary(@Req() req, @Query('bookId', ParseIntPipe) bookId: number) {
+    return this.netWorthService.getSummary(bookId, req.user.sub);
   }
 
   // Assets
   @Post('assets')
-  createAsset(@Req() req, @Body() dto: CreateAssetDto) {
-    return this.netWorthService.createAsset(req.user.sub, dto);
+  async createAsset(@Req() req, @Body() dto: CreateAssetDto, @Query('bookId', ParseIntPipe) bookId: number) {
+    const result = await this.netWorthService.createAsset(req.user.sub, bookId, dto);
+    if (!result) throw new NotFoundException('Accounting book not found');
+    return result;
   }
 
   @Put('assets/:id')
@@ -34,8 +41,10 @@ export class NetWorthController {
 
   // Liabilities
   @Post('liabilities')
-  createLiability(@Req() req, @Body() dto: CreateLiabilityDto) {
-    return this.netWorthService.createLiability(req.user.sub, dto);
+  async createLiability(@Req() req, @Body() dto: CreateLiabilityDto, @Query('bookId', ParseIntPipe) bookId: number) {
+    const result = await this.netWorthService.createLiability(req.user.sub, bookId, dto);
+    if (!result) throw new NotFoundException('Accounting book not found');
+    return result;
   }
 
   @Put('liabilities/:id')

@@ -18,6 +18,8 @@ const makeTransaction = (overrides: Partial<Transaction> = {}): Transaction => (
   categoryId: null,
   dailyReportId: null,
   valueDate: new Date(),
+  accountId: null,
+  toAccountId: null,
   ...overrides,
 });
 
