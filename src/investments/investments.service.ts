@@ -86,13 +86,11 @@ export class InvestmentsService {
       where: { accountingBookId, accountingBook: { userId } },
     });
 
-    // Step 1: fetch price + native currency for all positions
+    // Step 1: fetch prices for all positions (currency inferred from ticker suffix, no extra API calls)
     const priceResults = await Promise.allSettled(
       positions.map(async (pos) => {
-        const [price, currency] = await Promise.all([
-          this.fetchPrice(pos.ticker),
-          this.fetchCurrency(pos.ticker),
-        ]);
+        const price = await this.fetchPrice(pos.ticker);
+        const currency = this.getCurrencyFromTicker(pos.ticker);
         return { id: pos.id, price, currency };
       }),
     );
@@ -142,18 +140,19 @@ export class InvestmentsService {
     }
   }
 
-  private async fetchCurrency(ticker: string): Promise<string> {
-    try {
-      const apiKey = process.env.ALPHA_VANTAGE_API_KEY;
-      const url = `https://www.alphavantage.co/query?function=OVERVIEW&symbol=${encodeURIComponent(ticker)}&apikey=${apiKey}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      const currency = data['Currency'];
-      // GBX is British pence (1/100 of GBP), treat as GBP for exchange rate (price will be divided by 100)
-      return currency ?? 'EUR';
-    } catch {
-      return 'EUR';
-    }
+  private getCurrencyFromTicker(ticker: string): string {
+    const suffix = ticker.includes('.') ? ticker.split('.').pop()!.toUpperCase() : '';
+    const eurSuffixes = ['AMS', 'MIL', 'DEX', 'FRA', 'PAR', 'EPA', 'EBR', 'BME', 'MCE', 'HEL', 'OSL', 'VIE', 'IST'];
+    const gbpSuffixes = ['LON', 'LSE'];
+    const sekSuffixes = ['STO'];
+    const chfSuffixes = ['SWX', 'VTX'];
+
+    if (!suffix) return 'USD'; // No suffix → US market
+    if (eurSuffixes.includes(suffix)) return 'EUR';
+    if (gbpSuffixes.includes(suffix)) return 'GBP';
+    if (sekSuffixes.includes(suffix)) return 'SEK';
+    if (chfSuffixes.includes(suffix)) return 'CHF';
+    return 'USD'; // Unknown suffix → assume USD
   }
 
   private async fetchExchangeRate(fromCurrency: string, toCurrency = 'EUR'): Promise<number> {
