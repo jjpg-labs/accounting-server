@@ -1,10 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../services/prisma.service';
 import { CreateInvestmentDto } from './dto/create-investment.dto';
 
 @Injectable()
 export class InvestmentsService {
+  private readonly logger = new Logger(InvestmentsService.name);
   constructor(private prisma: PrismaService) {}
 
   async findAll(accountingBookId: number, userId: number) {
@@ -133,9 +134,11 @@ export class InvestmentsService {
       const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${encodeURIComponent(ticker)}&apikey=${apiKey}`;
       const res = await fetch(url);
       const data = await res.json();
+      this.logger.log(`GLOBAL_QUOTE [${ticker}]: ${JSON.stringify(data)}`);
       const price = data['Global Quote']?.['05. price'];
       return price ? parseFloat(price) : null;
-    } catch {
+    } catch (err) {
+      this.logger.error(`fetchPrice error [${ticker}]: ${err}`);
       return null;
     }
   }
@@ -167,9 +170,11 @@ export class InvestmentsService {
       const url = `https://www.alphavantage.co/query?function=CURRENCY_EXCHANGE_RATE&from_currency=${fromCurrency}&to_currency=${toCurrency}&apikey=${apiKey}`;
       const res = await fetch(url);
       const data = await res.json();
+      this.logger.log(`CURRENCY_EXCHANGE_RATE [${fromCurrency}->${toCurrency}]: ${JSON.stringify(data)}`);
       const rate = data['Realtime Currency Exchange Rate']?.['5. Exchange Rate'];
       return rate ? parseFloat(rate) : 1;
-    } catch {
+    } catch (err) {
+      this.logger.error(`fetchExchangeRate error [${fromCurrency}->${toCurrency}]: ${err}`);
       return 1;
     }
   }
