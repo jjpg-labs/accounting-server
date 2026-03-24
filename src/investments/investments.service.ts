@@ -87,43 +87,38 @@ export class InvestmentsService {
       where: { accountingBookId, accountingBook: { userId } },
     });
 
-    // Step 1: fetch prices for all positions (currency inferred from ticker suffix, no extra API calls)
-    const priceResults = await Promise.allSettled(
-      positions.map(async (pos) => {
-        const price = await this.fetchPrice(pos.ticker);
-        const currency = this.getCurrencyFromTicker(pos.ticker);
-        return { id: pos.id, price, currency };
-      }),
-    );
+    // Alpha Vantage free tier: 1 request/second, 25/day — fetch sequentially
+    const priceResults: { id: number; price: number | null; currency: string }[] = [];
+    for (const pos of positions) {
+      const price = await this.fetchPrice(pos.ticker);
+      const currency = this.getCurrencyFromTicker(pos.ticker);
+      priceResults.push({ id: pos.id, price, currency });
+      await new Promise((r) => setTimeout(r, 1200));
+    }
 
-    // Step 2: fetch exchange rates for unique non-EUR currencies (one call per currency)
+    // Fetch exchange rates sequentially for unique non-EUR currencies
     const foreignCurrencies = new Set<string>();
     for (const result of priceResults) {
-      if (result.status === 'fulfilled' && result.value.price !== null && result.value.currency !== 'EUR') {
-        foreignCurrencies.add(result.value.currency);
+      if (result.price !== null && result.currency !== 'EUR') {
+        foreignCurrencies.add(result.currency);
       }
     }
     const exchangeRates = new Map<string, number>();
-    await Promise.allSettled(
-      Array.from(foreignCurrencies).map(async (currency) => {
-        const rate = await this.fetchExchangeRate(currency);
-        exchangeRates.set(currency, rate);
-      }),
-    );
+    for (const currency of foreignCurrencies) {
+      const rate = await this.fetchExchangeRate(currency);
+      exchangeRates.set(currency, rate);
+      await new Promise((r) => setTimeout(r, 1200));
+    }
 
-    // Step 3: update positions with EUR-converted prices
-    await Promise.allSettled(
-      priceResults.map(async (result) => {
-        if (result.status !== 'fulfilled' || result.value.price === null) return;
-        const { id, price, currency } = result.value;
-        const rate = currency !== 'EUR' ? (exchangeRates.get(currency) ?? 1) : 1;
-        const eurPrice = price * rate;
-        await this.prisma.investmentPosition.update({
-          where: { id },
-          data: { currentPrice: new Prisma.Decimal(eurPrice) },
-        });
-      }),
-    );
+    // Update positions with EUR-converted prices
+    for (const { id, price, currency } of priceResults) {
+      if (price === null) continue;
+      const rate = currency !== 'EUR' ? (exchangeRates.get(currency) ?? 1) : 1;
+      await this.prisma.investmentPosition.update({
+        where: { id },
+        data: { currentPrice: new Prisma.Decimal(price * rate) },
+      });
+    }
 
     return this.findAll(accountingBookId, userId);
   }
