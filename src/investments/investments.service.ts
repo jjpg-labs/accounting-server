@@ -11,6 +11,7 @@ export class InvestmentsService {
     const positions = await this.prisma.investmentPosition.findMany({
       where: { accountingBookId, accountingBook: { userId } },
       orderBy: { createdAt: 'asc' },
+      include: { account: { select: { id: true, name: true } } },
     });
     const totalValue = positions.reduce(
       (sum, p) => sum + Number(p.currentPrice) * Number(p.shares),
@@ -42,6 +43,7 @@ export class InvestmentsService {
       data: {
         userId,
         accountingBookId,
+        accountId: dto.accountId ?? null,
         name: dto.name,
         ticker: dto.ticker,
         shares: new Prisma.Decimal(dto.shares),
@@ -66,6 +68,7 @@ export class InvestmentsService {
         ...(dto.currentPrice && { currentPrice: new Prisma.Decimal(dto.currentPrice) }),
         ...(dto.currency && { currency: dto.currency }),
         ...(dto.notes !== undefined && { notes: dto.notes }),
+        ...('accountId' in dto && { accountId: dto.accountId ?? null }),
       },
     });
   }

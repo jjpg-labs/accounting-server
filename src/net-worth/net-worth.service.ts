@@ -74,10 +74,11 @@ export class NetWorthService {
 
   // Summary per book
   async getSummary(accountingBookId: number, userId: number) {
-    const [assets, liabilities, investmentPositions, rawAccounts] = await Promise.all([
+    const [assets, liabilities, unlinkedPositions, rawAccounts] = await Promise.all([
       this.prisma.asset.findMany({ where: { accountingBookId, accountingBook: { userId } }, orderBy: { category: 'asc' } }),
       this.prisma.liability.findMany({ where: { accountingBookId, accountingBook: { userId } }, orderBy: { category: 'asc' } }),
-      this.prisma.investmentPosition.findMany({ where: { accountingBookId, accountingBook: { userId } } }),
+      // Only positions NOT linked to an account (linked ones are counted via account balance)
+      this.prisma.investmentPosition.findMany({ where: { accountingBookId, accountingBook: { userId }, accountId: null } }),
       this.prisma.account.findMany({ where: { accountingBookId, accountingBook: { userId } }, orderBy: { createdAt: 'asc' } }),
     ]);
 
@@ -85,10 +86,8 @@ export class NetWorthService {
 
     const totalAssets = assets.reduce((s, a) => s + Number(a.value), 0);
     const totalLiabilities = liabilities.reduce((s, l) => s + Number(l.amount), 0);
-    const investmentTotal = investmentPositions.reduce(
-      (s, p) => s + Number(p.currentPrice) * Number(p.shares),
-      0,
-    );
+    // investmentTotal = only unlinked positions (linked ones are inside account.balance)
+    const investmentTotal = unlinkedPositions.reduce((s, p) => s + Number(p.currentPrice) * Number(p.shares), 0);
     const accountsTotal = accounts.reduce((s, a) => s + a.balance, 0);
     const grandTotalAssets = totalAssets + investmentTotal + accountsTotal;
 
@@ -104,8 +103,8 @@ export class NetWorthService {
     };
   }
 
-  private async calcAccountBalance(account: { id: number; startingBalance: any; [key: string]: any }) {
-    const [incomeExpense, transferOut, transferIn] = await Promise.all([
+  private async calcAccountBalance(account: { id: number; type: string; startingBalance: any; [key: string]: any }) {
+    const [incomeExpense, transferOut, transferIn, positions] = await Promise.all([
       this.prisma.transaction.groupBy({
         by: ['type'],
         where: { accountId: account.id, type: { in: ['INCOME', 'EXPENSE'] } },
@@ -119,15 +118,22 @@ export class NetWorthService {
         where: { toAccountId: account.id, type: 'TRANSFER' },
         _sum: { amount: true },
       }),
+      account.type === 'INVESTMENT'
+        ? this.prisma.investmentPosition.findMany({
+            where: { accountId: account.id },
+            select: { id: true, name: true, ticker: true, shares: true, currentPrice: true, currency: true },
+          })
+        : Promise.resolve([]),
     ]);
 
     const income = Number(incomeExpense.find((r) => r.type === 'INCOME')?._sum?.amount ?? 0);
     const expense = Number(incomeExpense.find((r) => r.type === 'EXPENSE')?._sum?.amount ?? 0);
     const outgoing = Number(transferOut._sum?.amount ?? 0);
     const incoming = Number(transferIn._sum?.amount ?? 0);
-    const balance = Number(account.startingBalance) + income - expense + incoming - outgoing;
+    const positionsValue = positions.reduce((s, p) => s + Number(p.shares) * Number(p.currentPrice), 0);
+    const balance = Number(account.startingBalance) + income - expense + incoming - outgoing + positionsValue;
 
-    return { ...account, balance };
+    return { ...account, balance, positions };
   }
 
   // Global summary across all books

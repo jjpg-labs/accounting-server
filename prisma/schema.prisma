@@ -209,19 +209,20 @@ model SavingsGoal {
 }
 
 model Account {
-  id               Int             @id @default(autoincrement())
-  name             String
-  type             AccountType     @default(CHECKING)
-  startingBalance  Decimal         @default(0) @db.Decimal(14, 2)
-  notes            String?
-  userId           Int
-  accountingBookId Int
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
-  user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  accountingBook   AccountingBook  @relation(fields: [accountingBookId], references: [id], onDelete: Cascade)
-  transactions     Transaction[]   @relation("AccountTransactions")
-  incomingTransfers Transaction[]  @relation("AccountIncomingTransfers")
+  id                  Int                  @id @default(autoincrement())
+  name                String
+  type                AccountType          @default(CHECKING)
+  startingBalance     Decimal              @default(0) @db.Decimal(14, 2)
+  notes               String?
+  userId              Int
+  accountingBookId    Int
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountingBook      AccountingBook       @relation(fields: [accountingBookId], references: [id], onDelete: Cascade)
+  transactions        Transaction[]        @relation("AccountTransactions")
+  incomingTransfers   Transaction[]        @relation("AccountIncomingTransfers")
+  investmentPositions InvestmentPosition[]
 
   @@index([accountingBookId])
   @@index([userId])
@@ -271,13 +272,16 @@ model InvestmentPosition {
   notes            String?
   userId           Int
   accountingBookId Int?
+  accountId        Int?
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
   user             User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   accountingBook   AccountingBook? @relation(fields: [accountingBookId], references: [id], onDelete: SetNull)
+  account          Account?        @relation(fields: [accountId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([accountingBookId])
+  @@index([accountId])
 }
 
 model VatEntry {

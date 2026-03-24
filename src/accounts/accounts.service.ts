@@ -61,8 +61,8 @@ export class AccountsService {
     return this.prisma.account.delete({ where: { id } });
   }
 
-  private async withBalance(account: { id: number; startingBalance: Prisma.Decimal; [key: string]: any }) {
-    const [incomeExpense, transferOut, transferIn] = await Promise.all([
+  private async withBalance(account: { id: number; type: string; startingBalance: Prisma.Decimal; [key: string]: any }) {
+    const [incomeExpense, transferOut, transferIn, positions] = await Promise.all([
       this.prisma.transaction.groupBy({
         by: ['type'],
         where: { accountId: account.id, type: { in: ['INCOME', 'EXPENSE'] } },
@@ -76,15 +76,21 @@ export class AccountsService {
         where: { toAccountId: account.id, type: 'TRANSFER' },
         _sum: { amount: true },
       }),
+      account.type === 'INVESTMENT'
+        ? this.prisma.investmentPosition.findMany({
+            where: { accountId: account.id },
+            select: { id: true, name: true, ticker: true, shares: true, currentPrice: true, currency: true },
+          })
+        : Promise.resolve([]),
     ]);
 
     const income = Number(incomeExpense.find((r) => r.type === 'INCOME')?._sum?.amount ?? 0);
     const expense = Number(incomeExpense.find((r) => r.type === 'EXPENSE')?._sum?.amount ?? 0);
     const outgoing = Number(transferOut._sum?.amount ?? 0);
     const incoming = Number(transferIn._sum?.amount ?? 0);
+    const positionsValue = positions.reduce((s, p) => s + Number(p.shares) * Number(p.currentPrice), 0);
+    const balance = Number(account.startingBalance) + income - expense + incoming - outgoing + positionsValue;
 
-    const balance = Number(account.startingBalance) + income - expense + incoming - outgoing;
-
-    return { ...account, balance };
+    return { ...account, balance, positions };
   }
 }
