@@ -10,4 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Ping health endpoint
-        run: curl -s https://api.jjpg.dev/health
+        run: |
+          response=$(curl -s --max-time 30 https://api.jjpg.dev/health)
+          echo "Response: $response"
+          echo "$response" | grep -q '"status":"ok"' || (echo "Health check failed" && exit 1)
