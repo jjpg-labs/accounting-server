@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../services/prisma.service';
 import { CreateAssetDto } from './dto/create-asset.dto';
 import { CreateLiabilityDto } from './dto/create-liability.dto';
@@ -16,7 +16,7 @@ export class NetWorthService {
     });
     if (!book) return null;
     return this.prisma.asset.create({
-      data: { userId, accountingBookId, name: dto.name, value: new (Prisma as any).Decimal(dto.value), category: dto.category, notes: dto.notes },
+      data: { userId, accountingBookId, name: dto.name, value: new Prisma.Decimal(dto.value), category: dto.category, notes: dto.notes },
     });
   }
 
@@ -27,7 +27,7 @@ export class NetWorthService {
       where: { id },
       data: {
         ...(dto.name && { name: dto.name }),
-        ...(dto.value && { value: new (Prisma as any).Decimal(dto.value) }),
+        ...(dto.value && { value: new Prisma.Decimal(dto.value) }),
         ...(dto.category && { category: dto.category }),
         ...(dto.notes !== undefined && { notes: dto.notes }),
       },
@@ -48,7 +48,7 @@ export class NetWorthService {
     });
     if (!book) return null;
     return this.prisma.liability.create({
-      data: { userId, accountingBookId, name: dto.name, amount: new (Prisma as any).Decimal(dto.amount), category: dto.category, notes: dto.notes },
+      data: { userId, accountingBookId, name: dto.name, amount: new Prisma.Decimal(dto.amount), category: dto.category, notes: dto.notes },
     });
   }
 
@@ -59,7 +59,7 @@ export class NetWorthService {
       where: { id },
       data: {
         ...(dto.name && { name: dto.name }),
-        ...(dto.amount && { amount: new (Prisma as any).Decimal(dto.amount) }),
+        ...(dto.amount && { amount: new Prisma.Decimal(dto.amount) }),
         ...(dto.category && { category: dto.category }),
         ...(dto.notes !== undefined && { notes: dto.notes }),
       },
