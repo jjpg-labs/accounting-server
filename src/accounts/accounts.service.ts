@@ -20,6 +20,7 @@ export class AccountsService {
         name: dto.name,
         type: dto.type ?? 'CHECKING',
         startingBalance: dto.startingBalance != null ? new Prisma.Decimal(dto.startingBalance) : new Prisma.Decimal(0),
+        marginBalance: dto.marginBalance != null ? new Prisma.Decimal(dto.marginBalance) : new Prisma.Decimal(0),
         notes: dto.notes,
       },
     });
@@ -48,6 +49,7 @@ export class AccountsService {
         ...(dto.name && { name: dto.name }),
         ...(dto.type && { type: dto.type }),
         ...(dto.startingBalance != null && { startingBalance: new Prisma.Decimal(dto.startingBalance) }),
+        ...(dto.marginBalance != null && { marginBalance: new Prisma.Decimal(dto.marginBalance) }),
         ...(dto.notes !== undefined && { notes: dto.notes }),
       },
     });
@@ -61,7 +63,7 @@ export class AccountsService {
     return this.prisma.account.delete({ where: { id } });
   }
 
-  private async withBalance(account: { id: number; type: string; startingBalance: Prisma.Decimal; [key: string]: any }) {
+  private async withBalance(account: { id: number; type: string; startingBalance: Prisma.Decimal; marginBalance: Prisma.Decimal; [key: string]: any }) {
     const [incomeExpense, transferOut, transferIn, positions] = await Promise.all([
       this.prisma.transaction.groupBy({
         by: ['type'],
@@ -89,7 +91,7 @@ export class AccountsService {
     const outgoing = Number(transferOut._sum?.amount ?? 0);
     const incoming = Number(transferIn._sum?.amount ?? 0);
     const positionsValue = positions.reduce((s, p) => s + Number(p.shares) * Number(p.currentPrice), 0);
-    const balance = Number(account.startingBalance) + income - expense + incoming - outgoing + positionsValue;
+    const balance = Number(account.startingBalance) + income - expense + incoming - outgoing + positionsValue + Number(account.marginBalance);
 
     return { ...account, balance, positions };
   }

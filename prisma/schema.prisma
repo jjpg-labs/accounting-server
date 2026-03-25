@@ -215,6 +215,7 @@ model Account {
   name                String
   type                AccountType          @default(CHECKING)
   startingBalance     Decimal              @default(0) @db.Decimal(14, 2)
+  marginBalance       Decimal              @default(0) @db.Decimal(14, 2)
   notes               String?
   userId              Int
   accountingBookId    Int
