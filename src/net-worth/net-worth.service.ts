@@ -103,7 +103,7 @@ export class NetWorthService {
     };
   }
 
-  private async calcAccountBalance(account: { id: number; type: string; startingBalance: any; [key: string]: any }) {
+  private async calcAccountBalance(account: { id: number; type: string; startingBalance: any; marginBalance: any; [key: string]: any }) {
     const [incomeExpense, transferOut, transferIn, positions] = await Promise.all([
       this.prisma.transaction.groupBy({
         by: ['type'],
@@ -131,7 +131,7 @@ export class NetWorthService {
     const outgoing = Number(transferOut._sum?.amount ?? 0);
     const incoming = Number(transferIn._sum?.amount ?? 0);
     const positionsValue = positions.reduce((s, p) => s + Number(p.shares) * Number(p.currentPrice), 0);
-    const balance = Number(account.startingBalance) + income - expense + incoming - outgoing + positionsValue;
+    const balance = Number(account.startingBalance) + income - expense + incoming - outgoing + positionsValue + Number(account.marginBalance);
 
     return { ...account, balance, positions };
   }
