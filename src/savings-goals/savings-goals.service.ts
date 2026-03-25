@@ -15,7 +15,9 @@ export class SavingsGoalsService {
         targetAmount: new Prisma.Decimal(dto.targetAmount),
         deadline: dto.deadline ? new Date(dto.deadline) : null,
         notes: dto.notes,
+        accountId: dto.accountId ?? null,
       },
+      include: { account: { select: { id: true, name: true } } },
     });
   }
 
@@ -23,11 +25,15 @@ export class SavingsGoalsService {
     return this.prisma.savingsGoal.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
+      include: { account: { select: { id: true, name: true } } },
     });
   }
 
   async findOne(id: number, userId: number) {
-    return this.prisma.savingsGoal.findFirst({ where: { id, userId } });
+    return this.prisma.savingsGoal.findFirst({
+      where: { id, userId },
+      include: { account: { select: { id: true, name: true } } },
+    });
   }
 
   async update(id: number, userId: number, dto: Partial<CreateSavingsGoalDto>) {
@@ -40,7 +46,9 @@ export class SavingsGoalsService {
         ...(dto.targetAmount && { targetAmount: new Prisma.Decimal(dto.targetAmount) }),
         ...(dto.deadline !== undefined && { deadline: dto.deadline ? new Date(dto.deadline) : null }),
         ...(dto.notes !== undefined && { notes: dto.notes }),
+        ...(dto.accountId !== undefined && { accountId: dto.accountId ?? null }),
       },
+      include: { account: { select: { id: true, name: true } } },
     });
   }
 
