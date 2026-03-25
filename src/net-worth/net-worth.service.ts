@@ -131,7 +131,7 @@ export class NetWorthService {
     const outgoing = Number(transferOut._sum?.amount ?? 0);
     const incoming = Number(transferIn._sum?.amount ?? 0);
     const positionsValue = positions.reduce((s, p) => s + Number(p.shares) * Number(p.currentPrice), 0);
-    const balance = Number(account.startingBalance) + income - expense + incoming - outgoing + positionsValue + Number(account.marginBalance);
+    const balance = Number(account.startingBalance) + income - expense + incoming - outgoing + positionsValue + Number(account.marginBalance ?? 0);
 
     return { ...account, balance, positions };
   }
@@ -157,11 +157,19 @@ export class NetWorthService {
 
         const totalAssets = assets.reduce((s, a) => s + Number(a.value), 0);
         const totalLiabilities = liabilities.reduce((s, l) => s + Number(l.amount), 0);
+        // For display: all positions + marginBalance of investment accounts
+        const investmentMarginBalance = rawAccounts
+          .filter((a) => a.type === 'INVESTMENT')
+          .reduce((s, a) => s + Number(a.marginBalance ?? 0), 0);
         const investmentTotal = investmentPositions.reduce(
           (s, p) => s + Number(p.currentPrice) * Number(p.shares),
           0,
-        );
-        const grandTotalAssets = totalAssets + investmentTotal + accountsTotal;
+        ) + investmentMarginBalance;
+        // For grandTotalAssets: only unlinked positions (linked ones are already in accountsTotal via calcAccountBalance)
+        const unlinkedPositionsTotal = investmentPositions
+          .filter((p) => !p.accountId)
+          .reduce((s, p) => s + Number(p.currentPrice) * Number(p.shares), 0);
+        const grandTotalAssets = totalAssets + unlinkedPositionsTotal + accountsTotal;
 
         return {
           bookId: book.id,

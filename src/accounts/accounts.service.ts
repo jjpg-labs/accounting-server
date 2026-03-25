@@ -91,7 +91,7 @@ export class AccountsService {
     const outgoing = Number(transferOut._sum?.amount ?? 0);
     const incoming = Number(transferIn._sum?.amount ?? 0);
     const positionsValue = positions.reduce((s, p) => s + Number(p.shares) * Number(p.currentPrice), 0);
-    const balance = Number(account.startingBalance) + income - expense + incoming - outgoing + positionsValue + Number(account.marginBalance);
+    const balance = Number(account.startingBalance) + income - expense + incoming - outgoing + positionsValue + Number(account.marginBalance ?? 0);
 
     return { ...account, balance, positions };
   }
